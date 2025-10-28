@@ -552,24 +552,9 @@ SplitIt/
 
 ### Environment Variables
 
-Create `.env` file for local development:
+Create `.env` file for local development
 
-```env
-# Database
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=admin123
-POSTGRES_DB=splitwise
-
-# MongoDB
-MONGO_ROOT_USERNAME=admin
-MONGO_ROOT_PASSWORD=admin123
-
-# Kafka
-KAFKA_BROKER=kafka:29092
-
-# Eureka
-EUREKA_SERVER=http://discovery-server:8761/eureka
-```
+````
 
 ## 🐳 Docker Commands
 
@@ -577,7 +562,7 @@ EUREKA_SERVER=http://discovery-server:8761/eureka
 
 ```bash
 docker compose up -d
-```
+````
 
 ### Stop all services
 
