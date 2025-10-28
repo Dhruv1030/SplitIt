@@ -1,10 +1,6 @@
 # 🚀 SplitIt - Expense Sharing Microservices Platform# 🎯 Splitwise Clone - Microservices Architecture
 
-
-
 A production-ready microservices-based expense sharing application built with Spring Boot, inspired by Splitwise. Split bills, track expenses, and settle debts with friends and groups seamlessly.A production-ready expense sharing application built with Spring Boot microservices architecture.
-
-
 
 ![Java](https://img.shields.io/badge/Java-17-orange)## 📊 Architecture Overview
 
@@ -14,11 +10,11 @@ A production-ready microservices-based expense sharing application built with Sp
 
 ![Docker](https://img.shields.io/badge/Docker-Enabled-blue)Client → API Gateway → Discovery Server → Microservices
 
-![License](https://img.shields.io/badge/license-MIT-green)                                          ↓
+![License](https://img.shields.io/badge/license-MIT-green) ↓
 
                                     Kafka Events
 
-## 📋 Table of Contents                                          ↓
+## 📋 Table of Contents ↓
 
                                     Notifications
 
@@ -52,7 +48,7 @@ SplitIt follows a microservices architecture with the following components:
 
 ## 🚀 Quick Start
 
-```
+````
 
 ┌─────────────────────────────────────────────────────────────┐### Prerequisites
 
@@ -142,7 +138,7 @@ cd discovery-server
 
 - ✅ **Database Support**: MongoDB for users/analytics, PostgreSQL for transactional datamvn spring-boot:run
 
-```
+````
 
 ### Upcoming Features
 
@@ -162,11 +158,7 @@ cd discovery-server
 
 - 🔄 API documentation with Swagger## 📝 API Documentation
 
-
-
 ## 🛠 Tech Stack### User Service
-
-
 
 ### Backend- `POST /api/users/register` - Register new user
 
@@ -189,8 +181,6 @@ cd discovery-server
 - **MongoDB**: User profiles, analytics data- `POST /api/groups/{id}/members` - Add group member
 
 - **PostgreSQL**: Transactional data (groups, expenses, payments)- `GET /api/groups/user/{userId}` - Get user's groups
-
-
 
 ### Messaging & Streaming### Expense Service
 
@@ -216,11 +206,7 @@ cd discovery-server
 
 - **Maven**: Build automation- `GET /api/settlements/optimize/{groupId}` - Get optimized payment plan
 
-
-
 ## 📦 Prerequisites## 🔧 Technology Stack
-
-
 
 - **Java 17** or higher- **Backend**: Java 17, Spring Boot 3.2
 
@@ -250,7 +236,7 @@ cd SplitIt### MongoDB (User Service)
 
 ### 2. Build All Services
 
-```bash### PostgreSQL
+````bash### PostgreSQL
 
 ./build.sh
 
@@ -420,7 +406,7 @@ Content-Type: application/json
 
 }This project is licensed under the MIT License.
 
-```
+````
 
 ## 👥 Contributors
 
@@ -438,12 +424,14 @@ Content-Type: application/json
 ```
 
 #### Get User Profile
+
 ```http
 GET /api/users/{userId}
 Authorization: Bearer <token>
 ```
 
 #### Update Profile
+
 ```http
 PUT /api/users/{userId}
 Authorization: Bearer <token>
@@ -456,12 +444,14 @@ Content-Type: application/json
 ```
 
 #### Add Friend
+
 ```http
 POST /api/users/{userId}/friends/{friendId}
 Authorization: Bearer <token>
 ```
 
 #### Search Users
+
 ```http
 GET /api/users/search?query=john
 Authorization: Bearer <token>
@@ -470,17 +460,20 @@ Authorization: Bearer <token>
 ## 🧪 Testing
 
 ### Run All Tests
+
 ```bash
 mvn test
 ```
 
 ### Run Tests for Specific Service
+
 ```bash
 cd user-service
 mvn test
 ```
 
 ### Integration Testing
+
 ```bash
 # Start services
 docker compose up -d
@@ -492,18 +485,23 @@ docker compose up -d
 ## 📊 Monitoring
 
 ### Eureka Dashboard
+
 View all registered services and their health status:
+
 ```
 http://localhost:8761
 ```
 
 ### Zipkin Tracing
+
 View distributed traces across services:
+
 ```
 http://localhost:9411
 ```
 
 ### Service Health Checks
+
 ```bash
 # Check all services
 curl http://localhost:8080/actuator/health
@@ -513,6 +511,7 @@ curl http://localhost:8081/actuator/health
 ```
 
 ### View Logs
+
 ```bash
 # View logs for all services
 docker compose logs -f
@@ -524,6 +523,7 @@ docker logs -f user-service
 ## 🔧 Development
 
 ### Project Structure
+
 ```
 SplitIt/
 ├── discovery-server/        # Eureka service registry
@@ -553,6 +553,7 @@ SplitIt/
 ### Environment Variables
 
 Create `.env` file for local development:
+
 ```env
 # Database
 POSTGRES_USER=admin
@@ -573,26 +574,31 @@ EUREKA_SERVER=http://discovery-server:8761/eureka
 ## 🐳 Docker Commands
 
 ### Start all services
+
 ```bash
 docker compose up -d
 ```
 
 ### Stop all services
+
 ```bash
 docker compose down
 ```
 
 ### Rebuild and restart
+
 ```bash
 docker compose up -d --build
 ```
 
 ### View logs
+
 ```bash
 docker compose logs -f [service-name]
 ```
 
 ### Clean up volumes
+
 ```bash
 docker compose down -v
 ```
@@ -608,6 +614,7 @@ Contributions are welcome! Please follow these steps:
 5. Open a Pull Request
 
 ### Code Style
+
 - Follow Java naming conventions
 - Write meaningful commit messages
 - Add unit tests for new features
@@ -620,6 +627,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Dhruv Patel**
+
 - GitHub: [@Dhruv1030](https://github.com/Dhruv1030)
 
 ## 🙏 Acknowledgments

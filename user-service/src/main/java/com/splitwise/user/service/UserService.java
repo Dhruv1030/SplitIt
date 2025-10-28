@@ -3,6 +3,7 @@ package com.splitwise.user.service;
 import com.splitwise.user.dto.*;
 import com.splitwise.user.model.User;
 import com.splitwise.user.repository.UserRepository;
+import com.splitwise.user.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +21,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public AuthResponse registerUser(UserRequest request) {
         log.info("Registering user with email: {}", request.getEmail());
@@ -42,8 +45,10 @@ public class UserService {
         user = userRepository.save(user);
         log.info("User registered successfully with id: {}", user.getId());
 
-        // TODO: Generate JWT token
-        String token = "dummy-jwt-token";
+        String token = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                Arrays.asList("ROLE_USER"));
 
         return AuthResponse.builder()
                 .token(token)
@@ -67,8 +72,10 @@ public class UserService {
 
         log.info("User logged in successfully: {}", user.getId());
 
-        // TODO: Generate JWT token
-        String token = "dummy-jwt-token";
+        String token = jwtTokenProvider.generateToken(
+                user.getId(),
+                user.getEmail(),
+                Arrays.asList("ROLE_USER"));
 
         return AuthResponse.builder()
                 .token(token)

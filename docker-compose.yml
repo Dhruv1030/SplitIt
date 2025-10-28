@@ -90,6 +90,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       ZIPKIN_BASE_URL: http://zipkin:9411
+      JWT_SECRET: ${JWT_SECRET:-splitwise-jwt-secret-key-please-change-in-production-min-256-bits-required-for-hs512}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -107,6 +108,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       ZIPKIN_BASE_URL: http://zipkin:9411
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: ${JWT_SECRET:-splitwise-jwt-secret-key-please-change-in-production-min-256-bits-required-for-hs512}
     depends_on:
       - mongodb
       - kafka
