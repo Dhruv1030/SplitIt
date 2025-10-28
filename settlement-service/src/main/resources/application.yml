@@ -1,0 +1,31 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: settlement-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/splitwise
+    username: admin
+    password: admin123
+  jpa:
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: localhost:9092
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/splitwise
+  kafka:
+    bootstrap-servers: kafka:29092
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/

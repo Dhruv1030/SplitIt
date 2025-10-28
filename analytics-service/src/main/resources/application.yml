@@ -1,0 +1,28 @@
+server:
+  port: 8087
+spring:
+  application:
+    name: analytics-service
+  data:
+    mongodb:
+      uri: mongodb://admin:admin123@localhost:27017/analyticsdb?authSource=admin
+  kafka:
+    bootstrap-servers: localhost:9092
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    mongodb:
+      uri: mongodb://admin:admin123@mongodb:27017/analyticsdb?authSource=admin
+  kafka:
+    bootstrap-servers: kafka:29092
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/
