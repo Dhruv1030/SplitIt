@@ -12,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/expenses")
@@ -134,6 +136,20 @@ public class ExpenseController {
         UserBalanceResponse balance = expenseService.calculateUserBalance(userId);
 
         return ResponseEntity.ok(ApiResponse.success(balance));
+    }
+
+    /**
+     * Get balances for all users in a group (for settlement service)
+     * Returns: Map<userId, netBalance>
+     */
+    @GetMapping("/group/{groupId}/balances")
+    public ResponseEntity<Map<String, BigDecimal>> getGroupBalances(
+            @PathVariable Long groupId) {
+
+        log.info("Calculating balances for group: {}", groupId);
+        Map<String, BigDecimal> balances = expenseService.calculateGroupBalances(groupId);
+
+        return ResponseEntity.ok(balances);
     }
 
     /**
