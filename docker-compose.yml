@@ -32,11 +32,13 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
+    env_file:
+      - .env
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-admin123}
     volumes:
       - mongodb-data:/data/db
     networks:
@@ -45,10 +47,12 @@ services:
   postgres:
     image: postgres:15
     container_name: postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: splitwise
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: ${POSTGRES_DB:-splitwise}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
     ports:
       - "5432:5432"
     volumes:
@@ -84,12 +88,14 @@ services:
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
       JWT_SECRET: ${JWT_SECRET:-splitwise-jwt-secret-key-please-change-in-production-min-256-bits-required-for-hs512}
     depends_on:
       discovery-server:
@@ -100,14 +106,16 @@ services:
   user-service:
     build: ./user-service
     container_name: user-service
+    env_file:
+      - .env
     ports:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATA_MONGODB_URI: mongodb://admin:admin123@mongodb:27017/userdb?authSource=admin
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI:-mongodb://admin:admin123@mongodb:27017/userdb?authSource=admin}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
       JWT_SECRET: ${JWT_SECRET:-splitwise-jwt-secret-key-please-change-in-production-min-256-bits-required-for-hs512}
     depends_on:
       - mongodb
@@ -119,16 +127,18 @@ services:
   group-service:
     build: ./group-service
     container_name: group-service
+    env_file:
+      - .env
     ports:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/splitwise
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-splitwise}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - postgres
       - kafka
@@ -139,16 +149,18 @@ services:
   expense-service:
     build: ./expense-service
     container_name: expense-service
+    env_file:
+      - .env
     ports:
       - "8083:8083"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/splitwise
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-splitwise}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - postgres
       - kafka
@@ -159,16 +171,18 @@ services:
   settlement-service:
     build: ./settlement-service
     container_name: settlement-service
+    env_file:
+      - .env
     ports:
       - "8084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/splitwise
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-splitwise}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - postgres
       - kafka
@@ -179,13 +193,15 @@ services:
   notification-service:
     build: ./notification-service
     container_name: notification-service
+    env_file:
+      - .env
     ports:
       - "8085:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - kafka
       - discovery-server
@@ -195,16 +211,18 @@ services:
   payment-service:
     build: ./payment-service
     container_name: payment-service
+    env_file:
+      - .env
     ports:
       - "8086:8086"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/splitwise
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-splitwise}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - postgres
       - kafka
@@ -215,14 +233,16 @@ services:
   analytics-service:
     build: ./analytics-service
     container_name: analytics-service
+    env_file:
+      - .env
     ports:
       - "8087:8087"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATA_MONGODB_URI: mongodb://admin:admin123@mongodb:27017/analyticsdb?authSource=admin
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      ZIPKIN_BASE_URL: http://zipkin:9411
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGODB_USERNAME:-admin}:${MONGODB_PASSWORD:-admin123}@${MONGODB_HOST:-mongodb}:${MONGODB_PORT:-27017}/analyticsdb?authSource=admin
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_SERVER_URL:-http://discovery-server:8761/eureka/}
+      ZIPKIN_BASE_URL: ${ZIPKIN_BASE_URL:-http://zipkin:9411}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
     depends_on:
       - mongodb
       - kafka
