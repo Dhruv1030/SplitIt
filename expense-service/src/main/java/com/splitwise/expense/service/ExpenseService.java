@@ -237,6 +237,40 @@ public class ExpenseService {
     }
 
     /**
+     * Calculate net balances for all users in a group
+     * Returns Map<userId, netBalance>
+     * Positive balance = others owe this user
+     * Negative balance = this user owes others
+     */
+    @Transactional(readOnly = true)
+    public Map<String, BigDecimal> calculateGroupBalances(Long groupId) {
+        log.info("Calculating balances for group: {}", groupId);
+
+        Map<String, BigDecimal> balances = new HashMap<>();
+
+        // Get all expenses for the group
+        List<Expense> expenses = expenseRepository.findByGroupIdAndIsActiveTrueOrderByDateDesc(groupId);
+
+        for (Expense expense : expenses) {
+            String paidBy = expense.getPaidBy();
+
+            // Add the total amount paid to the payer's balance
+            balances.merge(paidBy, expense.getAmount(), BigDecimal::add);
+
+            // Subtract each split from the respective user's balance
+            for (ExpenseSplit split : expense.getSplits()) {
+                balances.merge(split.getUserId(), split.getAmount().negate(), BigDecimal::add);
+            }
+        }
+
+        // Filter out zero balances
+        balances.entrySet().removeIf(entry -> entry.getValue().compareTo(BigDecimal.ZERO) == 0);
+
+        log.info("Calculated balances for {} users in group {}", balances.size(), groupId);
+        return balances;
+    }
+
+    /**
      * Convert Expense entity to ExpenseResponse DTO
      */
     private ExpenseResponse convertToResponse(Expense expense) {
