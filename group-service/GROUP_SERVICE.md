@@ -1,12 +1,14 @@
 # Group Service - Complete Documentation 👥
 
 ## 📋 Overview
+
 **Status**: ✅ PRODUCTION READY  
 **Port**: 8082  
 **Database**: PostgreSQL (shared with Expense Service)  
-**Purpose**: Group management for expense sharing  
+**Purpose**: Group management for expense sharing
 
 The Group Service manages **shared expense groups**, handling:
+
 - 👥 **Group Creation & Management**
 - 🎭 **Member Management** (ADMIN, MEMBER roles)
 - 🏷️ **Group Categories** (trip, home, couple, other)
@@ -68,6 +70,7 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `POST /api/groups`
 
 **Request**:
+
 ```json
 {
   "name": "Weekend Trip to Mountains",
@@ -78,6 +81,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -105,6 +109,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Features**:
+
 - ✅ Creator automatically becomes ADMIN
 - ✅ Creator automatically added as first member
 - ✅ Group categories: trip, home, couple, other
@@ -117,6 +122,7 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `POST /api/groups/{groupId}/members`
 
 **Request**:
+
 ```json
 {
   "userId": "690051234567890123456789",
@@ -125,6 +131,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -139,6 +146,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Authorization**:
+
 - ✅ Only ADMIN can add members
 - ✅ Cannot add same user twice
 - ✅ Can specify role (ADMIN or MEMBER)
@@ -148,31 +156,33 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `DELETE /api/groups/{groupId}/members/{userId}`
 
 **Authorization**:
+
 - ✅ Only ADMIN can remove members
 - ✅ Cannot remove yourself if you're the last admin
 - ✅ Member leaves group but expenses remain
 
 ### 3. **Group Roles** 🎭
 
-| Role | Permissions |
-|------|-------------|
-| **ADMIN** | • Update group details<br>• Add/remove members<br>• Promote/demote members<br>• Delete group<br>• All MEMBER permissions |
-| **MEMBER** | • View group details<br>• View all expenses<br>• Add expenses<br>• View settlements<br>• Leave group |
+| Role       | Permissions                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **ADMIN**  | • Update group details<br>• Add/remove members<br>• Promote/demote members<br>• Delete group<br>• All MEMBER permissions |
+| **MEMBER** | • View group details<br>• View all expenses<br>• Add expenses<br>• View settlements<br>• Leave group                     |
 
 ### 4. **Group Categories** 🏷️
 
-| Category | Description | Use Case |
-|----------|-------------|----------|
-| `trip` | Travel and vacation | Shared trip expenses |
-| `home` | Household expenses | Roommates, family |
-| `couple` | Partner expenses | Dating, marriage |
-| `other` | General purpose | Any other scenario |
+| Category | Description         | Use Case             |
+| -------- | ------------------- | -------------------- |
+| `trip`   | Travel and vacation | Shared trip expenses |
+| `home`   | Household expenses  | Roommates, family    |
+| `couple` | Partner expenses    | Dating, marriage     |
+| `other`  | General purpose     | Any other scenario   |
 
 ### 5. **Get Group Details** 📄
 
 **Endpoint**: `GET /api/groups/{id}`
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -209,6 +219,7 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `GET /api/groups/user/{userId}`
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -232,6 +243,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Features**:
+
 - ✅ Shows user's role in each group
 - ✅ Only returns active groups
 - ✅ Ordered by creation date (newest first)
@@ -241,6 +253,7 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `PUT /api/groups/{id}`
 
 **Request**:
+
 ```json
 {
   "name": "Updated Group Name",
@@ -250,6 +263,7 @@ The Group Service manages **shared expense groups**, handling:
 ```
 
 **Authorization**:
+
 - ✅ Only ADMIN can update group
 
 ### 8. **Delete Group** 🗑️
@@ -257,6 +271,7 @@ The Group Service manages **shared expense groups**, handling:
 **Endpoint**: `DELETE /api/groups/{id}`
 
 **Features**:
+
 - ✅ **Soft delete** (sets `isActive = false`)
 - ✅ Group data preserved for historical records
 - ✅ Only ADMIN can delete
@@ -264,17 +279,17 @@ The Group Service manages **shared expense groups**, handling:
 
 ## 📡 Complete API Reference
 
-| Method | Endpoint | Auth | Admin Only | Description |
-|--------|----------|------|------------|-------------|
-| POST | `/api/groups` | ✅ | ❌ | Create group |
-| GET | `/api/groups/{id}` | ✅ | ❌ | Get group details |
-| PUT | `/api/groups/{id}` | ✅ | ✅ | Update group |
-| DELETE | `/api/groups/{id}` | ✅ | ✅ | Delete group |
-| POST | `/api/groups/{id}/members` | ✅ | ✅ | Add member |
-| DELETE | `/api/groups/{id}/members/{userId}` | ✅ | ✅ | Remove member |
-| PUT | `/api/groups/{id}/members/{userId}/role` | ✅ | ✅ | Update member role |
-| GET | `/api/groups/user/{userId}` | ✅ | ❌ | Get user's groups |
-| GET | `/api/groups/health` | ❌ | ❌ | Health check |
+| Method | Endpoint                                 | Auth | Admin Only | Description        |
+| ------ | ---------------------------------------- | ---- | ---------- | ------------------ |
+| POST   | `/api/groups`                            | ✅   | ❌         | Create group       |
+| GET    | `/api/groups/{id}`                       | ✅   | ❌         | Get group details  |
+| PUT    | `/api/groups/{id}`                       | ✅   | ✅         | Update group       |
+| DELETE | `/api/groups/{id}`                       | ✅   | ✅         | Delete group       |
+| POST   | `/api/groups/{id}/members`               | ✅   | ✅         | Add member         |
+| DELETE | `/api/groups/{id}/members/{userId}`      | ✅   | ✅         | Remove member      |
+| PUT    | `/api/groups/{id}/members/{userId}/role` | ✅   | ✅         | Update member role |
+| GET    | `/api/groups/user/{userId}`              | ✅   | ❌         | Get user's groups  |
+| GET    | `/api/groups/health`                     | ❌   | ❌         | Health check       |
 
 ## 🗄️ Database Schema
 
@@ -307,6 +322,7 @@ CREATE TABLE group_members (
 ```
 
 **Relationships**:
+
 - One-to-Many: Group → GroupMember
 - Cascade: Delete group → Delete all members (in future)
 - Unique constraint: (group_id, user_id) prevents duplicate members
@@ -329,7 +345,7 @@ if (!isAdmin) {
 // Check if user is member of group
 boolean isMember = groupMemberRepository
     .existsByGroupIdAndUserId(groupId, userId);
-    
+
 if (!isMember) {
     throw new UnauthorizedException("You are not a member of this group");
 }
@@ -419,13 +435,13 @@ curl -X DELETE http://localhost:8080/api/groups/1 \
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SERVER_PORT` | Service port | 8082 |
-| `POSTGRES_URL` | PostgreSQL connection | jdbc:postgresql://localhost:5432/splitwise |
-| `POSTGRES_USER` | Database username | admin |
-| `POSTGRES_PASSWORD` | Database password | admin123 |
-| `EUREKA_URL` | Eureka server | http://localhost:8761/eureka |
+| Variable            | Description           | Default                                    |
+| ------------------- | --------------------- | ------------------------------------------ |
+| `SERVER_PORT`       | Service port          | 8082                                       |
+| `POSTGRES_URL`      | PostgreSQL connection | jdbc:postgresql://localhost:5432/splitwise |
+| `POSTGRES_USER`     | Database username     | admin                                      |
+| `POSTGRES_PASSWORD` | Database password     | admin123                                   |
+| `EUREKA_URL`        | Eureka server         | http://localhost:8761/eureka               |
 
 ### Docker Configuration
 
@@ -471,30 +487,33 @@ docker compose logs group-service | grep "Started GroupServiceApplication"
 
 ## 📊 Integration Points
 
-| Service | Purpose | Communication |
-|---------|---------|---------------|
-| **API Gateway** | Routes requests | HTTP via Eureka |
-| **User Service** | Validates user IDs | Via API Gateway |
-| **Expense Service** | Links to groups | Shared PostgreSQL |
-| **PostgreSQL** | Data persistence | JDBC |
-| **Eureka** | Service discovery | REST API |
-| **Zipkin** | Distributed tracing | HTTP spans |
+| Service             | Purpose             | Communication     |
+| ------------------- | ------------------- | ----------------- |
+| **API Gateway**     | Routes requests     | HTTP via Eureka   |
+| **User Service**    | Validates user IDs  | Via API Gateway   |
+| **Expense Service** | Links to groups     | Shared PostgreSQL |
+| **PostgreSQL**      | Data persistence    | JDBC              |
+| **Eureka**          | Service discovery   | REST API          |
+| **Zipkin**          | Distributed tracing | HTTP spans        |
 
 ## 🎯 Business Rules
 
 ### Group Creation
+
 - ✅ Creator becomes first ADMIN
 - ✅ Group must have at least 1 member
 - ✅ Category is required
 - ✅ Name is required
 
 ### Member Management
+
 - ✅ User can be in multiple groups
 - ✅ Cannot add same user twice to a group
 - ✅ Group must have at least 1 ADMIN
 - ✅ Last ADMIN cannot leave/be removed
 
 ### Group Deletion
+
 - ✅ Soft delete (preserve data)
 - ✅ Only ADMIN can delete
 - ✅ Related expenses remain accessible
@@ -518,6 +537,6 @@ docker compose logs group-service | grep "Started GroupServiceApplication"
 **Created**: October 28, 2025  
 **Status**: ✅ Production Ready  
 **Database**: PostgreSQL (splitwise)  
-**Port**: 8082  
+**Port**: 8082
 
 **Key Achievement**: Comprehensive group management with role-based access control for collaborative expense tracking! 👥

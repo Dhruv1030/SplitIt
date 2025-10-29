@@ -1,12 +1,14 @@
 # Discovery Server - Complete Documentation 🔍
 
 ## 📋 Overview
+
 **Status**: ✅ PRODUCTION READY  
 **Port**: 8761  
 **Type**: Netflix Eureka Server  
-**Purpose**: Service discovery and registration for microservices  
+**Purpose**: Service discovery and registration for microservices
 
 The Discovery Server is the **service registry** for the SplitIt platform, providing:
+
 - 🔍 **Service Discovery** (find services dynamically)
 - 📝 **Service Registration** (auto-registration of services)
 - ❤️ **Health Monitoring** (track service health)
@@ -55,12 +57,14 @@ The Discovery Server is the **service registry** for the SplitIt platform, provi
 ### 1. **Service Registration** 📝
 
 **How it works**:
+
 1. Service starts up
 2. Service sends registration request to Eureka
 3. Eureka stores service metadata
 4. Service appears in registry
 
 **Metadata stored**:
+
 ```json
 {
   "instance": {
@@ -84,6 +88,7 @@ The Discovery Server is the **service registry** for the SplitIt platform, provi
 ### 2. **Service Discovery** 🔍
 
 **Client-side discovery**:
+
 ```java
 // API Gateway discovers services
 @Bean
@@ -97,6 +102,7 @@ public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 ```
 
 **Benefits**:
+
 - ✅ No hardcoded URLs
 - ✅ Automatic service discovery
 - ✅ Dynamic scaling support
@@ -105,6 +111,7 @@ public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 ### 3. **Health Monitoring** ❤️
 
 **Heartbeat mechanism**:
+
 ```
 Service → Send heartbeat every 30s → Eureka
                                       ↓
@@ -114,6 +121,7 @@ Service → Send heartbeat every 30s → Eureka
 ```
 
 **Health check**:
+
 - Endpoint: `/actuator/health`
 - Frequency: Every 30 seconds
 - Timeout: 90 seconds (3 missed heartbeats)
@@ -122,11 +130,13 @@ Service → Send heartbeat every 30s → Eureka
 ### 4. **Load Balancing** ⚖️
 
 **Ribbon load balancer**:
+
 ```
 Client request → Eureka (fetch instances) → Ribbon (pick instance) → Service
 ```
 
 **Strategies**:
+
 - **Round Robin** (default): Rotate through instances
 - **Random**: Random selection
 - **Weighted**: Based on response time
@@ -137,16 +147,19 @@ Client request → Eureka (fetch instances) → Ribbon (pick instance) → Servi
 **Purpose**: Prevent cascading failures during network issues
 
 **Trigger**:
+
 - When >85% of services miss heartbeats
 - Possible network partition
 
 **Behavior**:
+
 - ✅ Stop removing instances
 - ✅ Keep "dead" instances in registry
 - ✅ Wait for network recovery
 - ✅ Prefer availability over consistency
 
 **Warning message**:
+
 ```
 EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEY'RE NOT.
 RENEWALS ARE LESSER THAN THRESHOLD AND HENCE THE INSTANCES ARE NOT BEING EXPIRED.
@@ -163,6 +176,7 @@ http://localhost:8761
 ### Dashboard Sections
 
 #### 1. **System Status**
+
 ```
 Environment: test
 Data center: default
@@ -174,6 +188,7 @@ Renews (last min): 8
 ```
 
 #### 2. **Instances Currently Registered**
+
 ```
 Application         AMIs    Availability Zones    Status
 API-GATEWAY         1       1                     UP (1) - api-gateway:8080
@@ -187,6 +202,7 @@ ANALYTICS-SERVICE   1       1                     UP (1) - analytics-service:808
 ```
 
 #### 3. **General Info**
+
 ```
 total-avail-memory: 8192mb
 environment: test
@@ -214,13 +230,13 @@ eureka:
   instance:
     hostname: localhost
   client:
-    register-with-eureka: false   # Don't register itself
-    fetch-registry: false          # Don't fetch registry (it IS the registry)
+    register-with-eureka: false # Don't register itself
+    fetch-registry: false # Don't fetch registry (it IS the registry)
     service-url:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    enable-self-preservation: true  # Enable self-preservation mode
-    eviction-interval-timer-in-ms: 60000  # Check for expired instances every 60s
+    enable-self-preservation: true # Enable self-preservation mode
+    eviction-interval-timer-in-ms: 60000 # Check for expired instances every 60s
 ```
 
 ### Docker Configuration
@@ -270,6 +286,7 @@ curl http://localhost:8761/actuator/health
 ```
 
 **Response**:
+
 ```json
 {
   "status": "UP"
@@ -354,18 +371,18 @@ No longer routed to crashed instance
 
 ## 📊 REST API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/eureka/apps` | Get all registered applications |
-| GET | `/eureka/apps/{appName}` | Get specific application |
-| GET | `/eureka/apps/{appName}/{instanceId}` | Get specific instance |
-| POST | `/eureka/apps/{appName}` | Register new instance |
-| DELETE | `/eureka/apps/{appName}/{instanceId}` | Deregister instance |
-| PUT | `/eureka/apps/{appName}/{instanceId}` | Send heartbeat |
-| PUT | `/eureka/apps/{appName}/{instanceId}/status` | Update status |
-| DELETE | `/eureka/apps/{appName}/{instanceId}/status` | Remove status override |
-| GET | `/actuator/health` | Health check |
-| GET | `/` | Eureka dashboard (HTML) |
+| Method | Endpoint                                     | Description                     |
+| ------ | -------------------------------------------- | ------------------------------- |
+| GET    | `/eureka/apps`                               | Get all registered applications |
+| GET    | `/eureka/apps/{appName}`                     | Get specific application        |
+| GET    | `/eureka/apps/{appName}/{instanceId}`        | Get specific instance           |
+| POST   | `/eureka/apps/{appName}`                     | Register new instance           |
+| DELETE | `/eureka/apps/{appName}/{instanceId}`        | Deregister instance             |
+| PUT    | `/eureka/apps/{appName}/{instanceId}`        | Send heartbeat                  |
+| PUT    | `/eureka/apps/{appName}/{instanceId}/status` | Update status                   |
+| DELETE | `/eureka/apps/{appName}/{instanceId}/status` | Remove status override          |
+| GET    | `/actuator/health`                           | Health check                    |
+| GET    | `/`                                          | Eureka dashboard (HTML)         |
 
 ## 🚀 Deployment
 
@@ -408,6 +425,7 @@ docker compose logs -f discovery-server
 **Cause**: Incorrect Eureka URL or network issues
 
 **Solution**:
+
 ```bash
 # Check service logs
 docker compose logs <service-name> | grep "eureka"
@@ -424,11 +442,13 @@ cat <service>/src/main/resources/application.yml | grep eureka
 **Cause**: Network issues or too many services down
 
 **Message**:
+
 ```
 EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP
 ```
 
 **Solution**:
+
 ```bash
 # Check if services are actually down
 docker compose ps
@@ -444,6 +464,7 @@ docker compose restart <service-name>
 **Cause**: Services crashed without deregistering
 
 **Solution**:
+
 ```bash
 # Wait 90 seconds for auto-removal
 sleep 90
@@ -464,12 +485,12 @@ eureka:
 ```yaml
 eureka:
   client:
-    fetch-registry: true           # Enable registry caching
-    register-with-eureka: true     # Enable registration
-    registry-fetch-interval-seconds: 30  # Refresh cache every 30s
+    fetch-registry: true # Enable registry caching
+    register-with-eureka: true # Enable registration
+    registry-fetch-interval-seconds: 30 # Refresh cache every 30s
   instance:
-    lease-renewal-interval-in-seconds: 30    # Send heartbeat every 30s
-    lease-expiration-duration-in-seconds: 90  # Remove if 90s no heartbeat
+    lease-renewal-interval-in-seconds: 30 # Send heartbeat every 30s
+    lease-expiration-duration-in-seconds: 90 # Remove if 90s no heartbeat
 ```
 
 ### 2. **Health Check Endpoint**
@@ -566,6 +587,6 @@ public class UserServiceApplication {
 **Created**: October 28, 2025  
 **Status**: ✅ Production Ready  
 **Port**: 8761  
-**Type**: Netflix Eureka Server  
+**Type**: Netflix Eureka Server
 
 **Key Achievement**: Central service discovery enabling dynamic routing and load balancing for all microservices! 🔍
