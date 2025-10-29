@@ -1,12 +1,14 @@
 # API Gateway - Complete Documentation 🚪
 
 ## 📋 Overview
+
 **Status**: ✅ PRODUCTION READY  
 **Port**: 8080  
 **Type**: Spring Cloud Gateway  
-**Purpose**: Single entry point for all microservices  
+**Purpose**: Single entry point for all microservices
 
 The API Gateway acts as the **front door** to the SplitIt platform, providing:
+
 - 🔐 **Centralized Authentication** (JWT validation)
 - 🔀 **Intelligent Routing** (service discovery)
 - 🛡️ **Circuit Breaker** (fault tolerance)
@@ -57,6 +59,7 @@ The API Gateway acts as the **front door** to the SplitIt platform, providing:
 **Purpose**: Global filter that validates JWT tokens for all incoming requests
 
 **Flow**:
+
 ```
 Request → Check if public path? → Yes → Allow
                 ↓
@@ -74,14 +77,17 @@ Request → Check if public path? → Yes → Allow
 ```
 
 **Public Paths** (No authentication required):
+
 - `/api/users/register` - User registration
 - `/api/users/login` - User login
 - `/eureka/**` - Eureka dashboard
 
 **Protected Paths** (JWT required):
+
 - All other endpoints require `Authorization: Bearer <token>`
 
 **Header Injection**:
+
 ```java
 X-User-Id: "690050fd8006473761a88fbd"
 X-User-Email: "alice@example.com"
@@ -89,6 +95,7 @@ X-User-Roles: "ROLE_USER"
 ```
 
 **Key Features**:
+
 - ✅ Uses HS512 algorithm with shared secret
 - ✅ High priority (Order = -100) to run early
 - ✅ Returns 401 Unauthorized for invalid tokens
@@ -99,22 +106,24 @@ X-User-Roles: "ROLE_USER"
 **Purpose**: Defines routing rules for all microservices
 
 **Routing Strategy**:
+
 ```yaml
 Path Pattern → Load Balancer → Service Discovery
 ```
 
 **Routes Configuration**:
 
-| Service | Path Pattern | Target URI | Port |
-|---------|-------------|-----------|------|
-| User Service | `/api/users/**` | `lb://user-service` | 8081 |
-| Group Service | `/api/groups/**` | `lb://group-service` | 8082 |
-| Expense Service | `/api/expenses/**` | `lb://expense-service` | 8083 |
+| Service            | Path Pattern          | Target URI                | Port |
+| ------------------ | --------------------- | ------------------------- | ---- |
+| User Service       | `/api/users/**`       | `lb://user-service`       | 8081 |
+| Group Service      | `/api/groups/**`      | `lb://group-service`      | 8082 |
+| Expense Service    | `/api/expenses/**`    | `lb://expense-service`    | 8083 |
 | Settlement Service | `/api/settlements/**` | `lb://settlement-service` | 8084 |
-| Payment Service | `/api/payments/**` | `lb://payment-service` | 8086 |
-| Analytics Service | `/api/analytics/**` | `lb://analytics-service` | 8087 |
+| Payment Service    | `/api/payments/**`    | `lb://payment-service`    | 8086 |
+| Analytics Service  | `/api/analytics/**`   | `lb://analytics-service`  | 8087 |
 
 **Load Balancer** (`lb://`):
+
 - Uses **Eureka Discovery** to find service instances
 - Automatic **client-side load balancing**
 - Routes to healthy instances only
@@ -124,6 +133,7 @@ Path Pattern → Load Balancer → Service Discovery
 **Purpose**: Fault tolerance and resilience
 
 **Configuration**:
+
 ```yaml
 Sliding Window Size: 10 requests
 Minimum Calls: 5 (before calculating failure rate)
@@ -133,11 +143,13 @@ Slow Call Threshold: 60 seconds
 ```
 
 **Circuit States**:
+
 1. **CLOSED** (Normal): All requests flow through
 2. **OPEN** (Broken): Requests fail fast, fallback triggered
 3. **HALF-OPEN** (Testing): Allows limited requests to test recovery
 
 **Circuit Breakers per Service**:
+
 - `userServiceCircuitBreaker`
 - `groupServiceCircuitBreaker`
 - `expenseServiceCircuitBreaker`
@@ -146,6 +158,7 @@ Slow Call Threshold: 60 seconds
 - `analyticsServiceCircuitBreaker`
 
 **Fallback URIs**:
+
 ```
 User Service → /fallback/users
 Group Service → /fallback/groups
@@ -155,6 +168,7 @@ Expense Service → /fallback/expenses
 ### 4. **Service Discovery Integration** 🔍
 
 **Eureka Client Configuration**:
+
 ```yaml
 eureka:
   client:
@@ -165,6 +179,7 @@ eureka:
 ```
 
 **Benefits**:
+
 - ✅ Dynamic service discovery (no hardcoded URLs)
 - ✅ Automatic instance registration
 - ✅ Health-based routing
@@ -173,17 +188,19 @@ eureka:
 ### 5. **Distributed Tracing** 📊
 
 **Zipkin Integration**:
+
 ```yaml
 management:
   tracing:
     sampling:
-      probability: 1.0  # 100% sampling
+      probability: 1.0 # 100% sampling
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans
 ```
 
 **Features**:
+
 - ✅ Request flow visualization
 - ✅ Performance bottleneck identification
 - ✅ Error tracking across services
@@ -207,7 +224,7 @@ management:
      │◄────────────────────────────────────────────│
      │  {token: "eyJhbGci...", user: {...}}       │
      │                                              │
-     
+
 ┌────▼────┐                  ┌──────────────┐                ┌──────────────┐
 │ Client  │                  │ API Gateway  │                │Expense Service│
 └────┬────┘                  └──────┬───────┘                └──────┬───────┘
@@ -235,6 +252,7 @@ management:
 ### JWT Token Structure
 
 **Header**:
+
 ```json
 {
   "alg": "HS512"
@@ -242,6 +260,7 @@ management:
 ```
 
 **Payload** (Claims):
+
 ```json
 {
   "sub": "690050fd8006473761a88fbd",
@@ -253,6 +272,7 @@ management:
 ```
 
 **Signature**:
+
 ```
 HMACSHA512(
   base64UrlEncode(header) + "." + base64UrlEncode(payload),
@@ -264,63 +284,63 @@ HMACSHA512(
 
 ### User Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| POST | `/api/users/register` | ❌ Public | Register new user |
-| POST | `/api/users/login` | ❌ Public | Login and get JWT |
-| GET | `/api/users/{id}` | ✅ Required | Get user profile |
-| PUT | `/api/users/{id}` | ✅ Required | Update user profile |
-| POST | `/api/users/{id}/friends` | ✅ Required | Add friend |
-| GET | `/api/users/{id}/friends` | ✅ Required | List friends |
-| GET | `/api/users/search` | ✅ Required | Search users |
+| Method | Endpoint                  | Authentication | Description         |
+| ------ | ------------------------- | -------------- | ------------------- |
+| POST   | `/api/users/register`     | ❌ Public      | Register new user   |
+| POST   | `/api/users/login`        | ❌ Public      | Login and get JWT   |
+| GET    | `/api/users/{id}`         | ✅ Required    | Get user profile    |
+| PUT    | `/api/users/{id}`         | ✅ Required    | Update user profile |
+| POST   | `/api/users/{id}/friends` | ✅ Required    | Add friend          |
+| GET    | `/api/users/{id}/friends` | ✅ Required    | List friends        |
+| GET    | `/api/users/search`       | ✅ Required    | Search users        |
 
 ### Group Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| POST | `/api/groups` | ✅ Required | Create group |
-| GET | `/api/groups/{id}` | ✅ Required | Get group details |
-| PUT | `/api/groups/{id}` | ✅ Required | Update group |
-| DELETE | `/api/groups/{id}` | ✅ Required | Delete group |
-| POST | `/api/groups/{id}/members` | ✅ Required | Add member |
-| DELETE | `/api/groups/{id}/members/{userId}` | ✅ Required | Remove member |
-| GET | `/api/groups/user/{userId}` | ✅ Required | Get user's groups |
+| Method | Endpoint                            | Authentication | Description       |
+| ------ | ----------------------------------- | -------------- | ----------------- |
+| POST   | `/api/groups`                       | ✅ Required    | Create group      |
+| GET    | `/api/groups/{id}`                  | ✅ Required    | Get group details |
+| PUT    | `/api/groups/{id}`                  | ✅ Required    | Update group      |
+| DELETE | `/api/groups/{id}`                  | ✅ Required    | Delete group      |
+| POST   | `/api/groups/{id}/members`          | ✅ Required    | Add member        |
+| DELETE | `/api/groups/{id}/members/{userId}` | ✅ Required    | Remove member     |
+| GET    | `/api/groups/user/{userId}`         | ✅ Required    | Get user's groups |
 
 ### Expense Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| POST | `/api/expenses` | ✅ Required | Create expense |
-| GET | `/api/expenses/{id}` | ✅ Required | Get expense |
-| PUT | `/api/expenses/{id}` | ✅ Required | Update expense |
-| DELETE | `/api/expenses/{id}` | ✅ Required | Delete expense |
-| GET | `/api/expenses/group/{groupId}` | ✅ Required | Get group expenses |
-| GET | `/api/expenses/my-expenses` | ✅ Required | Get user expenses |
-| GET | `/api/expenses/balance` | ✅ Required | Get user balance |
+| Method | Endpoint                        | Authentication | Description        |
+| ------ | ------------------------------- | -------------- | ------------------ |
+| POST   | `/api/expenses`                 | ✅ Required    | Create expense     |
+| GET    | `/api/expenses/{id}`            | ✅ Required    | Get expense        |
+| PUT    | `/api/expenses/{id}`            | ✅ Required    | Update expense     |
+| DELETE | `/api/expenses/{id}`            | ✅ Required    | Delete expense     |
+| GET    | `/api/expenses/group/{groupId}` | ✅ Required    | Get group expenses |
+| GET    | `/api/expenses/my-expenses`     | ✅ Required    | Get user expenses  |
+| GET    | `/api/expenses/balance`         | ✅ Required    | Get user balance   |
 
 ### Settlement Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| GET | `/api/settlements/group/{groupId}` | ✅ Required | Calculate settlements |
-| POST | `/api/settlements/settle` | ✅ Required | Mark settlement complete |
-| GET | `/api/settlements/user/{userId}` | ✅ Required | Get user settlements |
+| Method | Endpoint                           | Authentication | Description              |
+| ------ | ---------------------------------- | -------------- | ------------------------ |
+| GET    | `/api/settlements/group/{groupId}` | ✅ Required    | Calculate settlements    |
+| POST   | `/api/settlements/settle`          | ✅ Required    | Mark settlement complete |
+| GET    | `/api/settlements/user/{userId}`   | ✅ Required    | Get user settlements     |
 
 ### Payment Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| POST | `/api/payments/initiate` | ✅ Required | Initiate payment |
-| GET | `/api/payments/{id}` | ✅ Required | Get payment status |
-| POST | `/api/payments/webhook` | ❌ Public | Payment gateway webhook |
+| Method | Endpoint                 | Authentication | Description             |
+| ------ | ------------------------ | -------------- | ----------------------- |
+| POST   | `/api/payments/initiate` | ✅ Required    | Initiate payment        |
+| GET    | `/api/payments/{id}`     | ✅ Required    | Get payment status      |
+| POST   | `/api/payments/webhook`  | ❌ Public      | Payment gateway webhook |
 
 ### Analytics Service Routes
 
-| Method | Endpoint | Authentication | Description |
-|--------|----------|----------------|-------------|
-| GET | `/api/analytics/user/{userId}/summary` | ✅ Required | User spending summary |
-| GET | `/api/analytics/group/{groupId}/summary` | ✅ Required | Group analytics |
-| GET | `/api/analytics/category-breakdown` | ✅ Required | Category analysis |
+| Method | Endpoint                                 | Authentication | Description           |
+| ------ | ---------------------------------------- | -------------- | --------------------- |
+| GET    | `/api/analytics/user/{userId}/summary`   | ✅ Required    | User spending summary |
+| GET    | `/api/analytics/group/{groupId}/summary` | ✅ Required    | Group analytics       |
+| GET    | `/api/analytics/category-breakdown`      | ✅ Required    | Category analysis     |
 
 ## 🧪 Testing the API Gateway
 
@@ -331,6 +351,7 @@ curl http://localhost:8080/actuator/health
 ```
 
 **Expected Response**:
+
 ```json
 {
   "status": "UP"
@@ -373,6 +394,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ### 5. **Verify Header Injection**
 
 Check downstream service logs to see injected headers:
+
 ```bash
 docker compose logs expense-service | grep "X-User-Id"
 ```
@@ -382,6 +404,7 @@ You should see: `X-User-Id: 690050fd8006473761a88fbd`
 ### 6. **Test Circuit Breaker**
 
 Stop a service and make requests:
+
 ```bash
 # Stop expense service
 docker compose stop expense-service
@@ -415,11 +438,13 @@ curl http://localhost:8080/actuator/gateway/routes | jq
 ### Zipkin Tracing
 
 **Access Zipkin UI**:
+
 ```
 http://localhost:9411
 ```
 
 **Features**:
+
 - View request traces across all services
 - Identify slow endpoints
 - Track errors and failures
@@ -428,11 +453,13 @@ http://localhost:9411
 ### Eureka Dashboard
 
 **Access Eureka**:
+
 ```
 http://localhost:8761
 ```
 
 **View**:
+
 - All registered service instances
 - Service health status
 - Instance metadata
@@ -440,29 +467,33 @@ http://localhost:8761
 ## 🔒 Security Features
 
 ### 1. **JWT Validation**
+
 - ✅ Validates signature using shared secret
 - ✅ Checks token expiration
 - ✅ Prevents token tampering
 
 ### 2. **Header Injection**
+
 - ✅ Downstream services trust headers (no re-validation needed)
 - ✅ Consistent user context across services
 - ✅ Prevents header spoofing (clients can't inject these headers)
 
 ### 3. **CORS** (Ready to configure)
+
 ```yaml
 spring:
   cloud:
     gateway:
       globalcors:
         corsConfigurations:
-          '[/**]':
+          "[/**]":
             allowedOrigins: "http://localhost:3000"
             allowedMethods: "*"
             allowedHeaders: "*"
 ```
 
 ### 4. **Rate Limiting** (Ready to add)
+
 ```yaml
 filters:
   - name: RequestRateLimiter
@@ -475,12 +506,12 @@ filters:
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SERVER_PORT` | Gateway port | 8080 |
-| `JWT_SECRET` | JWT signing key | Must be 256+ bits |
-| `EUREKA_URL` | Eureka server URL | http://localhost:8761/eureka |
-| `ZIPKIN_URL` | Zipkin tracing URL | http://localhost:9411 |
+| Variable      | Description        | Default                      |
+| ------------- | ------------------ | ---------------------------- |
+| `SERVER_PORT` | Gateway port       | 8080                         |
+| `JWT_SECRET`  | JWT signing key    | Must be 256+ bits            |
+| `EUREKA_URL`  | Eureka server URL  | http://localhost:8761/eureka |
+| `ZIPKIN_URL`  | Zipkin tracing URL | http://localhost:9411        |
 
 ### Docker Profile
 
@@ -537,6 +568,7 @@ docker compose logs -f api-gateway
 **Cause**: JWT secret mismatch between user-service and api-gateway
 
 **Solution**:
+
 ```bash
 # Ensure both services use same JWT_SECRET
 export JWT_SECRET="your-256-bit-secret"
@@ -548,6 +580,7 @@ docker compose restart user-service api-gateway
 **Cause**: Service not registered with Eureka or circuit breaker open
 
 **Solution**:
+
 ```bash
 # Check Eureka dashboard
 curl http://localhost:8761
@@ -564,6 +597,7 @@ docker compose restart
 **Cause**: Filter order or configuration issue
 
 **Solution**:
+
 ```bash
 # Check gateway logs
 docker compose logs api-gateway | grep "X-User-Id"
@@ -575,16 +609,19 @@ curl http://localhost:8080/actuator/gateway/filters
 ## 📈 Performance Considerations
 
 ### Reactive Programming
+
 - ✅ Non-blocking I/O with Spring WebFlux
 - ✅ Handles high concurrency efficiently
 - ✅ Low memory footprint
 
 ### Load Balancing
+
 - ✅ Client-side load balancing with Ribbon
 - ✅ Automatic health-based routing
 - ✅ Distributes load across instances
 
 ### Caching (Future Enhancement)
+
 ```yaml
 filters:
   - name: LocalResponseCache
@@ -623,6 +660,6 @@ filters:
 **Created**: October 28, 2025  
 **Status**: ✅ Production Ready  
 **Port**: 8080  
-**Dependencies**: Eureka Discovery Server, All microservices  
+**Dependencies**: Eureka Discovery Server, All microservices
 
 **Key Achievement**: Single entry point providing authentication, routing, and resilience for the entire SplitIt platform! 🚀

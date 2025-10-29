@@ -1,12 +1,14 @@
 # User Service - Complete Documentation 👤
 
 ## 📋 Overview
+
 **Status**: ✅ PRODUCTION READY  
 **Port**: 8081  
 **Database**: MongoDB  
-**Purpose**: User authentication, profile management, and JWT generation  
+**Purpose**: User authentication, profile management, and JWT generation
 
 The User Service is the **authentication hub** of the SplitIt platform, handling:
+
 - 🔐 **User Registration & Login**
 - 🎫 **JWT Token Generation & Validation**
 - 👤 **User Profile Management**
@@ -66,6 +68,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 **Endpoint**: `POST /api/users/register`
 
 **Request**:
+
 ```json
 {
   "name": "Alice Smith",
@@ -77,6 +80,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ```
 
 **Response**:
+
 ```json
 {
   "token": "eyJhbGciOiJIUzUxMiJ9...",
@@ -96,6 +100,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ```
 
 **Features**:
+
 - ✅ Email uniqueness validation
 - ✅ Password hashing with BCrypt
 - ✅ Automatic JWT token generation
@@ -107,6 +112,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 **Endpoint**: `POST /api/users/login`
 
 **Request**:
+
 ```json
 {
   "email": "alice@example.com",
@@ -115,6 +121,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ```
 
 **Response**:
+
 ```json
 {
   "token": "eyJhbGciOiJIUzUxMiJ9...",
@@ -129,6 +136,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ```
 
 **Security**:
+
 - ✅ BCrypt password verification
 - ✅ JWT token with 1-hour expiration
 - ✅ User roles included in token
@@ -139,6 +147,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 **Algorithm**: HS512 (HMAC with SHA-512)
 
 **Token Structure**:
+
 ```json
 {
   "header": {
@@ -156,6 +165,7 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ```
 
 **Claims**:
+
 - `sub`: User ID (subject)
 - `email`: User email
 - `roles`: User roles (ROLE_USER, ROLE_ADMIN)
@@ -165,12 +175,14 @@ The User Service is the **authentication hub** of the SplitIt platform, handling
 ### 4. **Profile Management** 👤
 
 **Get User Profile**:
+
 ```bash
 GET /api/users/{id}
 Authorization: Bearer <token>
 ```
 
 **Update User Profile**:
+
 ```bash
 PUT /api/users/{id}
 Authorization: Bearer <token>
@@ -187,6 +199,7 @@ Content-Type: application/json
 ### 5. **Friend Management** 👥
 
 **Add Friend**:
+
 ```bash
 POST /api/users/{userId}/friends
 Authorization: Bearer <token>
@@ -198,12 +211,14 @@ Content-Type: application/json
 ```
 
 **Get Friends List**:
+
 ```bash
 GET /api/users/{userId}/friends
 Authorization: Bearer <token>
 ```
 
 **Response**:
+
 ```json
 {
   "userId": "690050fd8006473761a88fbd",
@@ -222,18 +237,21 @@ Authorization: Bearer <token>
 ### 6. **User Search** 🔍
 
 **Search by Email**:
+
 ```bash
 GET /api/users/search?email=alice@example.com
 Authorization: Bearer <token>
 ```
 
 **Search by Name**:
+
 ```bash
 GET /api/users/search?name=Alice
 Authorization: Bearer <token>
 ```
 
 **Response**:
+
 ```json
 {
   "users": [
@@ -250,18 +268,18 @@ Authorization: Bearer <token>
 
 ## 📡 Complete API Reference
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/users/register` | ❌ | Register new user |
-| POST | `/api/users/login` | ❌ | Login and get JWT |
-| GET | `/api/users/{id}` | ✅ | Get user profile |
-| PUT | `/api/users/{id}` | ✅ | Update profile |
-| DELETE | `/api/users/{id}` | ✅ | Delete account |
-| POST | `/api/users/{id}/friends` | ✅ | Add friend |
-| DELETE | `/api/users/{id}/friends/{friendId}` | ✅ | Remove friend |
-| GET | `/api/users/{id}/friends` | ✅ | Get friends list |
-| GET | `/api/users/search` | ✅ | Search users |
-| GET | `/api/users/health` | ❌ | Health check |
+| Method | Endpoint                             | Auth | Description       |
+| ------ | ------------------------------------ | ---- | ----------------- |
+| POST   | `/api/users/register`                | ❌   | Register new user |
+| POST   | `/api/users/login`                   | ❌   | Login and get JWT |
+| GET    | `/api/users/{id}`                    | ✅   | Get user profile  |
+| PUT    | `/api/users/{id}`                    | ✅   | Update profile    |
+| DELETE | `/api/users/{id}`                    | ✅   | Delete account    |
+| POST   | `/api/users/{id}/friends`            | ✅   | Add friend        |
+| DELETE | `/api/users/{id}/friends/{friendId}` | ✅   | Remove friend     |
+| GET    | `/api/users/{id}/friends`            | ✅   | Get friends list  |
+| GET    | `/api/users/search`                  | ✅   | Search users      |
+| GET    | `/api/users/health`                  | ❌   | Health check      |
 
 ## 🗄️ Database Schema
 
@@ -286,28 +304,33 @@ Authorization: Bearer <token>
 ```
 
 **Indexes**:
+
 - `email`: Unique index for fast lookup
 - `_id`: Default primary key
 
 ## 🔒 Security Features
 
 ### 1. **Password Security**
+
 - ✅ BCrypt hashing (strength factor: 10)
 - ✅ Never return password in responses
 - ✅ Secure password comparison
 
 ### 2. **JWT Security**
+
 - ✅ HS512 algorithm (512-bit key)
 - ✅ 1-hour token expiration
 - ✅ Signed with shared secret
 - ✅ Tamper-proof tokens
 
 ### 3. **Input Validation**
+
 - ✅ Email format validation
 - ✅ Required field validation
 - ✅ Password strength requirements (future)
 
 ### 4. **Authorization**
+
 - ✅ User can only update their own profile
 - ✅ JWT validation via API Gateway
 - ✅ Role-based access control ready
@@ -380,13 +403,13 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SERVER_PORT` | Service port | 8081 |
-| `MONGODB_URI` | MongoDB connection string | mongodb://admin:REDACTED_PASSWORD@localhost:27017/userdb |
-| `JWT_SECRET` | JWT signing key | Must be 256+ bits |
-| `JWT_EXPIRATION_MS` | Token expiration time | 3600000 (1 hour) |
-| `EUREKA_URL` | Eureka server URL | http://localhost:8761/eureka |
+| Variable            | Description               | Default                                         |
+| ------------------- | ------------------------- | ----------------------------------------------- |
+| `SERVER_PORT`       | Service port              | 8081                                            |
+| `MONGODB_URI`       | MongoDB connection string | mongodb://admin:REDACTED_PASSWORD@localhost:27017/userdb |
+| `JWT_SECRET`        | JWT signing key           | Must be 256+ bits                               |
+| `JWT_EXPIRATION_MS` | Token expiration time     | 3600000 (1 hour)                                |
+| `EUREKA_URL`        | Eureka server URL         | http://localhost:8761/eureka                    |
 
 ### Docker Configuration
 
@@ -433,13 +456,13 @@ curl http://localhost:8761/eureka/apps/user-service
 
 ## 📊 Integration Points
 
-| Service | Purpose | Communication |
-|---------|---------|---------------|
-| **API Gateway** | Routes all requests | HTTP via Eureka |
-| **MongoDB** | Data persistence | MongoDB driver |
-| **Eureka** | Service discovery | REST API |
-| **Zipkin** | Distributed tracing | HTTP spans |
-| **Kafka** | Future events | Not yet implemented |
+| Service         | Purpose             | Communication       |
+| --------------- | ------------------- | ------------------- |
+| **API Gateway** | Routes all requests | HTTP via Eureka     |
+| **MongoDB**     | Data persistence    | MongoDB driver      |
+| **Eureka**      | Service discovery   | REST API            |
+| **Zipkin**      | Distributed tracing | HTTP spans          |
+| **Kafka**       | Future events       | Not yet implemented |
 
 ## 🎯 Future Enhancements
 
@@ -459,6 +482,6 @@ curl http://localhost:8761/eureka/apps/user-service
 **Created**: October 28, 2025  
 **Status**: ✅ Production Ready  
 **Database**: MongoDB (userdb)  
-**Port**: 8081  
+**Port**: 8081
 
 **Key Achievement**: Secure authentication and user management with JWT token generation for the entire platform! 🔐
