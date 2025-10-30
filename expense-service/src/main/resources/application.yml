@@ -36,6 +36,17 @@ management:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans
 
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: true
+
 ---
 spring:
   config:
