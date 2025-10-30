@@ -2,6 +2,7 @@ package com.splitwise.settlement.controller;
 
 import com.splitwise.settlement.dto.*;
 import com.splitwise.settlement.service.SettlementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class SettlementController {
      */
     @PostMapping
     public ResponseEntity<SettlementResponse> recordSettlement(
-            @RequestBody RecordSettlementRequest request,
+            @Valid @RequestBody RecordSettlementRequest request,
             @RequestHeader("X-User-Id") String currentUserId) {
         log.info("Recording settlement for user: {}", currentUserId);
 
