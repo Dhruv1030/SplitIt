@@ -10,66 +10,8 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      routes:
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/users
-
-        - id: group-service
-          uri: lb://group-service
-          predicates:
-            - Path=/api/groups/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: groupServiceCircuitBreaker
-                fallbackUri: forward:/fallback/groups
-
-        - id: expense-service
-          uri: lb://expense-service
-          predicates:
-            - Path=/api/expenses/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: expenseServiceCircuitBreaker
-                fallbackUri: forward:/fallback/expenses
-
-        - id: settlement-service
-          uri: lb://settlement-service
-          predicates:
-            - Path=/api/settlements/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: settlementServiceCircuitBreaker
-                fallbackUri: forward:/fallback/settlements
-
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/payments/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: paymentServiceCircuitBreaker
-                fallbackUri: forward:/fallback/payments
-
-        - id: analytics-service
-          uri: lb://analytics-service
-          predicates:
-            - Path=/api/analytics/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: analyticsServiceCircuitBreaker
-                fallbackUri: forward:/fallback/analytics
+      # Routes are now configured in RouteConfig.java for better control
+      # This allows us to apply authentication selectively
 
 eureka:
   client:
