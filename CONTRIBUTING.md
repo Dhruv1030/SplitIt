@@ -36,20 +36,20 @@ Before creating bug reports, please check existing issues to avoid duplicates. W
 **Describe the bug**
 A clear description of what the bug is.
 
-- **To Reproduce**
-  Steps to reproduce:
+**To Reproduce**
+Steps to reproduce:
 
 1. Go to '...'
 2. Click on '...'
 3. See error
 
-- **Expected behavior**
-  What you expected to happen.
+**Expected behavior**
+What you expected to happen.
 
-- **Screenshots**
-  If applicable, add screenshots.
+**Screenshots**
+If applicable, add screenshots.
 
-- **Environment:**
+**Environment:**
 
 - OS: [e.g., macOS, Windows, Linux]
 - Browser: [e.g., Chrome, Safari]
@@ -69,17 +69,17 @@ We love new ideas! Before suggesting a feature:
 **Feature Request Template:**
 
 ```markdown
-- **Is your feature request related to a problem?**
-  A clear description of the problem.
+**Is your feature request related to a problem?**
+A clear description of the problem.
 
-- **Describe the solution you'd like**
-  What you want to happen.
+**Describe the solution you'd like**
+What you want to happen.
 
-- **Describe alternatives you've considered**
-  Other solutions you've thought about.
+**Describe alternatives you've considered**
+Other solutions you've thought about.
 
-- **Additional context**
-  Any other context or screenshots.
+**Additional context**
+Any other context or screenshots.
 ```
 
 ### Contributing Code 💻
