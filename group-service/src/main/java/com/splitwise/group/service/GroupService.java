@@ -1,5 +1,6 @@
 package com.splitwise.group.service;
 
+import com.splitwise.group.client.UserClient;
 import com.splitwise.group.dto.*;
 import com.splitwise.group.exception.BadRequestException;
 import com.splitwise.group.exception.ResourceNotFoundException;
@@ -25,6 +26,7 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final UserClient userClient;
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request, String userId) {
@@ -292,12 +294,19 @@ public class GroupService {
 
     private GroupResponse mapToGroupResponse(Group group) {
         List<GroupResponse.MemberResponse> members = group.getMembers().stream()
-                .map(member -> GroupResponse.MemberResponse.builder()
-                        .id(member.getId())
-                        .userId(member.getUserId())
-                        .role(member.getRole())
-                        .joinedAt(member.getJoinedAt())
-                        .build())
+                .map(member -> {
+                    // Fetch user details from user-service
+                    UserClient.UserDTO user = userClient.getUserById(member.getUserId());
+                    
+                    return GroupResponse.MemberResponse.builder()
+                            .id(member.getId())
+                            .userId(member.getUserId())
+                            .name(user != null ? user.getName() : "Unknown User")
+                            .email(user != null ? user.getEmail() : null)
+                            .role(member.getRole())
+                            .joinedAt(member.getJoinedAt())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return GroupResponse.builder()

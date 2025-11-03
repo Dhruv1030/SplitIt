@@ -33,6 +33,8 @@ public class GroupResponse {
     public static class MemberResponse {
         private Long id;
         private String userId;
+        private String name;  // User's display name
+        private String email; // User's email
         private GroupMember.MemberRole role;
         private LocalDateTime joinedAt;
     }
