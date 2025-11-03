@@ -83,6 +83,19 @@ public class ExpenseController {
     }
 
     /**
+     * Get all expenses for current user (alias for /my-expenses)
+     * Added for frontend compatibility
+     */
+    @GetMapping("/user")
+    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getUserExpenses(
+            @RequestHeader("X-User-Id") String userId) {
+
+        log.info("Fetching expenses for user via /user endpoint: {}", userId);
+        // Reuse the same logic as /my-expenses
+        return getMyExpenses(userId);
+    }
+
+    /**
      * Update an expense
      */
     @PutMapping("/{id}")

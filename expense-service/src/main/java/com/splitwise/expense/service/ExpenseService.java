@@ -186,16 +186,24 @@ public class ExpenseService {
         // Get total amount user paid (expenses they created)
         BigDecimal totalPaid = expenseSplitRepository.getTotalPaidByUser(userId);
 
+        // FIX: Handle null values for new users (database SUM returns null when no rows
+        // match)
+        BigDecimal totalOwedValue = totalOwed != null ? totalOwed : BigDecimal.ZERO;
+        BigDecimal totalPaidValue = totalPaid != null ? totalPaid : BigDecimal.ZERO;
+
         // Calculate net balance (positive = others owe you, negative = you owe others)
-        BigDecimal netBalance = totalPaid.subtract(totalOwed);
+        BigDecimal netBalance = totalPaidValue.subtract(totalOwedValue);
+
+        log.debug("Balance calculated for user {} - Paid: {}, Owed: {}, Net: {}",
+                userId, totalPaidValue, totalOwedValue, netBalance);
 
         // Get detailed balances per user
         Map<String, BigDecimal> balances = calculateDetailedBalances(userId);
 
         return UserBalanceResponse.builder()
                 .userId(userId)
-                .totalPaid(totalPaid)
-                .totalOwed(totalOwed)
+                .totalPaid(totalPaidValue)
+                .totalOwed(totalOwedValue)
                 .netBalance(netBalance)
                 .balances(balances)
                 .build();
