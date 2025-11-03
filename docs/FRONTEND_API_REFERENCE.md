@@ -1618,6 +1618,235 @@ curl -X GET http://localhost:8080/api/expenses/user \
 
 ---
 
+### Issue #2: Balance Calculation NullPointerException
+
+**Status**: 🔴 Critical Backend Bug - Frontend Workaround Active  
+**Severity**: High  
+**Date Identified**: November 2, 2025
+
+> **Impact**: 500 Internal Server Error for new users accessing balance endpoint. Frontend has graceful fallback to display $0 balances.
+
+#### Problem Summary
+
+The balance calculation endpoint crashes with a `NullPointerException` when calculating balances for users who haven't paid for any expenses yet. The service fails to handle `NULL` values returned from database aggregate queries.
+
+**Error Details**:
+
+```
+HTTP Status: 500 Internal Server Error
+
+java.lang.NullPointerException: Cannot invoke "java.math.BigDecimal.subtract(java.math.BigDecimal)" because "totalPaid" is null
+    at com.splitwise.expense.service.ExpenseService.calculateUserBalance(ExpenseService.java:190)
+```
+
+**Affected Endpoint**: `GET /api/expenses/balance`
+
+#### When This Occurs
+
+1. **New Users**: Users who registered but haven't created any expenses
+2. **Participant-Only Users**: Users added to expenses but haven't paid for any
+3. **Database NULL Values**: SQL aggregate `SUM()` returns `NULL` when no rows match
+
+#### Root Cause
+
+```java
+// Current buggy code in ExpenseService.java:190
+BigDecimal totalPaid = expenseRepository.sumAmountByPaidBy(userId);  // Returns NULL
+BigDecimal totalOwed = expenseSplitRepository.sumAmountByUserId(userId);  // Returns NULL
+
+// ❌ Crashes here if either value is null
+BigDecimal balance = totalPaid.subtract(totalOwed);
+```
+
+#### Backend Fix Required
+
+**File**: `expense-service/src/main/java/com/splitwise/expense/service/ExpenseService.java`
+
+**Option 1: Null-Safe Arithmetic (Recommended)**
+
+```java
+public UserBalanceResponse calculateUserBalance(String userId) {
+    log.info("Calculating balance for user: {}", userId);
+    
+    // Query database for totals
+    BigDecimal totalPaid = expenseRepository.sumAmountByPaidBy(userId);
+    BigDecimal totalOwed = expenseSplitRepository.sumAmountByUserId(userId);
+    
+    // ✅ FIX: Default to ZERO if null
+    BigDecimal totalPaidValue = totalPaid != null ? totalPaid : BigDecimal.ZERO;
+    BigDecimal totalOwedValue = totalOwed != null ? totalOwed : BigDecimal.ZERO;
+    
+    // Calculate net balance safely
+    BigDecimal netBalance = totalPaidValue.subtract(totalOwedValue);
+    
+    // Calculate detailed balances
+    Map<String, BigDecimal> balances = calculateDetailedBalances(userId);
+    
+    return UserBalanceResponse.builder()
+        .totalPaid(totalPaidValue)
+        .totalOwed(totalOwedValue)
+        .netBalance(netBalance)
+        .balances(balances)
+        .userId(userId)
+        .build();
+}
+```
+
+**Option 2: Database-Level Default**
+
+```java
+// Update repository queries to use COALESCE
+@Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.paidBy = :userId AND e.isActive = true")
+BigDecimal sumAmountByPaidBy(@Param("userId") String userId);
+
+@Query("SELECT COALESCE(SUM(es.amount), 0) FROM ExpenseSplit es WHERE es.userId = :userId")
+BigDecimal sumAmountByUserId(@Param("userId") String userId);
+```
+
+**Option 3: Java Optional Pattern**
+
+```java
+BigDecimal totalPaid = Optional.ofNullable(
+    expenseRepository.sumAmountByPaidBy(userId)
+).orElse(BigDecimal.ZERO);
+
+BigDecimal totalOwed = Optional.ofNullable(
+    expenseSplitRepository.sumAmountByUserId(userId)
+).orElse(BigDecimal.ZERO);
+```
+
+#### Frontend Workaround (Already Implemented)
+
+The frontend gracefully handles this error:
+
+```typescript
+// File: src/app/features/dashboard/dashboard.ts
+
+this.expenseService.getOverallBalance().subscribe({
+  next: (response) => {
+    const balance = response.data;
+    this.stats.amountOwed = balance.totalOwed || 0;
+    this.stats.amountOwing = balance.totalOwing || 0;
+    this.checkLoadingComplete();
+  },
+  error: (error) => {
+    console.warn(
+      '⚠️ Balance calculation failed (backend NullPointerException):',
+      error.message
+    );
+    
+    // ✅ Graceful degradation - set defaults
+    this.stats.amountOwed = 0;
+    this.stats.amountOwing = 0;
+    this.checkLoadingComplete();
+  }
+});
+```
+
+#### Impact
+
+| Aspect            | Status                                                |
+| ----------------- | ----------------------------------------------------- |
+| User Experience   | ✅ Dashboard loads successfully with $0.00 balances   |
+| Functionality     | ⚠️ Balance displays correctly after first expense     |
+| Error Visibility  | ✅ Warning logged to console (not disruptive)         |
+| Production Impact | 🟡 Medium - affects only new users temporarily        |
+
+#### Testing After Fix
+
+```bash
+# Test new user with no expenses
+curl -X GET http://localhost:8080/api/expenses/balance \
+  -H "Authorization: Bearer <new-user-token>"
+
+# Expected: 200 OK with zeros
+{
+  "success": true,
+  "data": {
+    "totalPaid": 0.00,
+    "totalOwed": 0.00,
+    "netBalance": 0.00,
+    "balances": {}
+  }
+}
+
+# Test user with expenses
+curl -X GET http://localhost:8080/api/expenses/balance \
+  -H "Authorization: Bearer <user-with-expenses-token>"
+
+# Expected: 200 OK with correct balances
+{
+  "success": true,
+  "data": {
+    "totalPaid": 150.00,
+    "totalOwed": 80.00,
+    "netBalance": 70.00,
+    "balances": {
+      "user2": 50.00,
+      "user3": 30.00
+    }
+  }
+}
+```
+
+#### Unit Tests Needed
+
+```java
+// File: expense-service/src/test/java/com/splitwise/expense/service/ExpenseServiceTest.java
+
+@Test
+void testCalculateBalanceForNewUser() {
+    // Given: User with no expenses
+    String userId = "new-user-123";
+    when(expenseRepository.sumAmountByPaidBy(userId)).thenReturn(null);
+    when(expenseSplitRepository.sumAmountByUserId(userId)).thenReturn(null);
+    
+    // When
+    UserBalanceResponse balance = expenseService.calculateUserBalance(userId);
+    
+    // Then
+    assertNotNull(balance);
+    assertEquals(BigDecimal.ZERO, balance.getTotalPaid());
+    assertEquals(BigDecimal.ZERO, balance.getTotalOwed());
+    assertEquals(BigDecimal.ZERO, balance.getNetBalance());
+}
+
+@Test
+void testCalculateBalanceForParticipantOnly() {
+    // Given: User who owes but hasn't paid
+    String userId = "participant-user";
+    when(expenseRepository.sumAmountByPaidBy(userId)).thenReturn(null);
+    when(expenseSplitRepository.sumAmountByUserId(userId)).thenReturn(new BigDecimal("50.00"));
+    
+    // When
+    UserBalanceResponse balance = expenseService.calculateUserBalance(userId);
+    
+    // Then
+    assertEquals(BigDecimal.ZERO, balance.getTotalPaid());
+    assertEquals(new BigDecimal("50.00"), balance.getTotalOwed());
+    assertEquals(new BigDecimal("-50.00"), balance.getNetBalance());
+}
+```
+
+#### Related Files
+
+**Backend:**
+- `expense-service/src/main/java/com/splitwise/expense/service/ExpenseService.java` (line 190)
+- `expense-service/src/main/java/com/splitwise/expense/repository/ExpenseRepository.java`
+- `expense-service/src/main/java/com/splitwise/expense/repository/ExpenseSplitRepository.java`
+
+**Frontend:**
+- `src/app/features/dashboard/dashboard.ts` (workaround implemented)
+- `src/app/core/services/expense.service.ts`
+
+#### Priority & Effort
+
+**Priority**: High (affects all new users)  
+**Estimated Effort**: 30 minutes - 1 hour  
+**Recommended Fix**: Option 1 (null-safe arithmetic) - most explicit and readable
+
+---
+
 ## 📝 Notes (Continued)
 
 ## 🚀 Getting Started Checklist
@@ -1646,6 +1875,7 @@ For questions or issues:
 
 ---
 
-**Last Updated:** November 1, 2025  
+**Last Updated:** November 2, 2025  
 **API Version:** 1.0.0  
-**Backend Base URL:** http://localhost:8080
+**Backend Base URL:** http://localhost:8080  
+**Known Issues:** 2 (see Known Issues section above)
