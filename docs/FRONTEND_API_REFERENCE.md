@@ -1667,21 +1667,21 @@ BigDecimal balance = totalPaid.subtract(totalOwed);
 ```java
 public UserBalanceResponse calculateUserBalance(String userId) {
     log.info("Calculating balance for user: {}", userId);
-    
+
     // Query database for totals
     BigDecimal totalPaid = expenseRepository.sumAmountByPaidBy(userId);
     BigDecimal totalOwed = expenseSplitRepository.sumAmountByUserId(userId);
-    
+
     // ✅ FIX: Default to ZERO if null
     BigDecimal totalPaidValue = totalPaid != null ? totalPaid : BigDecimal.ZERO;
     BigDecimal totalOwedValue = totalOwed != null ? totalOwed : BigDecimal.ZERO;
-    
+
     // Calculate net balance safely
     BigDecimal netBalance = totalPaidValue.subtract(totalOwedValue);
-    
+
     // Calculate detailed balances
     Map<String, BigDecimal> balances = calculateDetailedBalances(userId);
-    
+
     return UserBalanceResponse.builder()
         .totalPaid(totalPaidValue)
         .totalOwed(totalOwedValue)
@@ -1731,26 +1731,26 @@ this.expenseService.getOverallBalance().subscribe({
   },
   error: (error) => {
     console.warn(
-      '⚠️ Balance calculation failed (backend NullPointerException):',
+      "⚠️ Balance calculation failed (backend NullPointerException):",
       error.message
     );
-    
+
     // ✅ Graceful degradation - set defaults
     this.stats.amountOwed = 0;
     this.stats.amountOwing = 0;
     this.checkLoadingComplete();
-  }
+  },
 });
 ```
 
 #### Impact
 
-| Aspect            | Status                                                |
-| ----------------- | ----------------------------------------------------- |
-| User Experience   | ✅ Dashboard loads successfully with $0.00 balances   |
-| Functionality     | ⚠️ Balance displays correctly after first expense     |
-| Error Visibility  | ✅ Warning logged to console (not disruptive)         |
-| Production Impact | 🟡 Medium - affects only new users temporarily        |
+| Aspect            | Status                                              |
+| ----------------- | --------------------------------------------------- |
+| User Experience   | ✅ Dashboard loads successfully with $0.00 balances |
+| Functionality     | ⚠️ Balance displays correctly after first expense   |
+| Error Visibility  | ✅ Warning logged to console (not disruptive)       |
+| Production Impact | 🟡 Medium - affects only new users temporarily      |
 
 #### Testing After Fix
 
@@ -1800,10 +1800,10 @@ void testCalculateBalanceForNewUser() {
     String userId = "new-user-123";
     when(expenseRepository.sumAmountByPaidBy(userId)).thenReturn(null);
     when(expenseSplitRepository.sumAmountByUserId(userId)).thenReturn(null);
-    
+
     // When
     UserBalanceResponse balance = expenseService.calculateUserBalance(userId);
-    
+
     // Then
     assertNotNull(balance);
     assertEquals(BigDecimal.ZERO, balance.getTotalPaid());
@@ -1817,10 +1817,10 @@ void testCalculateBalanceForParticipantOnly() {
     String userId = "participant-user";
     when(expenseRepository.sumAmountByPaidBy(userId)).thenReturn(null);
     when(expenseSplitRepository.sumAmountByUserId(userId)).thenReturn(new BigDecimal("50.00"));
-    
+
     // When
     UserBalanceResponse balance = expenseService.calculateUserBalance(userId);
-    
+
     // Then
     assertEquals(BigDecimal.ZERO, balance.getTotalPaid());
     assertEquals(new BigDecimal("50.00"), balance.getTotalOwed());
@@ -1831,11 +1831,13 @@ void testCalculateBalanceForParticipantOnly() {
 #### Related Files
 
 **Backend:**
+
 - `expense-service/src/main/java/com/splitwise/expense/service/ExpenseService.java` (line 190)
 - `expense-service/src/main/java/com/splitwise/expense/repository/ExpenseRepository.java`
 - `expense-service/src/main/java/com/splitwise/expense/repository/ExpenseSplitRepository.java`
 
 **Frontend:**
+
 - `src/app/features/dashboard/dashboard.ts` (workaround implemented)
 - `src/app/core/services/expense.service.ts`
 
