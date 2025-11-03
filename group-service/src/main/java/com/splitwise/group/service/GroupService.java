@@ -297,7 +297,7 @@ public class GroupService {
                 .map(member -> {
                     // Fetch user details from user-service
                     UserClient.UserDTO user = userClient.getUserById(member.getUserId());
-                    
+
                     return GroupResponse.MemberResponse.builder()
                             .id(member.getId())
                             .userId(member.getUserId())

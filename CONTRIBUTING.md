@@ -30,24 +30,27 @@ Before creating bug reports, please check existing issues to avoid duplicates. W
 - **Screenshots** if applicable
 - **Environment details** (OS, Browser, Java version, etc.)
 
-**Bug Report Template:**
+- **Bug Report Template:**
+
 ```markdown
 **Describe the bug**
 A clear description of what the bug is.
 
-**To Reproduce**
-Steps to reproduce:
+- **To Reproduce**
+  Steps to reproduce:
+
 1. Go to '...'
 2. Click on '...'
 3. See error
 
-**Expected behavior**
-What you expected to happen.
+- **Expected behavior**
+  What you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots.
+- **Screenshots**
+  If applicable, add screenshots.
 
-**Environment:**
+- **Environment:**
+
 - OS: [e.g., macOS, Windows, Linux]
 - Browser: [e.g., Chrome, Safari]
 - Java Version: [e.g., 17]
@@ -64,18 +67,19 @@ We love new ideas! Before suggesting a feature:
 4. **Consider alternatives** you've thought of
 
 **Feature Request Template:**
+
 ```markdown
-**Is your feature request related to a problem?**
-A clear description of the problem.
+- **Is your feature request related to a problem?**
+  A clear description of the problem.
 
-**Describe the solution you'd like**
-What you want to happen.
+- **Describe the solution you'd like**
+  What you want to happen.
 
-**Describe alternatives you've considered**
-Other solutions you've thought about.
+- **Describe alternatives you've considered**
+  Other solutions you've thought about.
 
-**Additional context**
-Any other context or screenshots.
+- **Additional context**
+  Any other context or screenshots.
 ```
 
 ### Contributing Code 💻
@@ -83,6 +87,7 @@ Any other context or screenshots.
 #### Good First Issues
 
 Look for issues labeled:
+
 - `good first issue` - Perfect for newcomers
 - `help wanted` - We need community help
 - `beginner-friendly` - Easy to get started
@@ -90,16 +95,19 @@ Look for issues labeled:
 #### Areas We Need Help With
 
 - **Frontend** (Angular/React)
+
   - UI/UX improvements
   - Responsive design enhancements
   - Accessibility features
 
 - **Backend** (Spring Boot Microservices)
+
   - API endpoint improvements
   - Performance optimizations
   - New features implementation
 
 - **Documentation**
+
   - API documentation
   - User guides
   - Code comments
@@ -124,32 +132,38 @@ Look for issues labeled:
 ### Quick Start
 
 1. **Fork the repository**
+
    ```bash
    # Click the "Fork" button on GitHub
    ```
 
 2. **Clone your fork**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/SplitIt.git
    cd SplitIt
    ```
 
 3. **Add upstream remote**
+
    ```bash
    git remote add upstream https://github.com/Dhruv1030/SplitIt.git
    ```
 
 4. **Start infrastructure services**
+
    ```bash
    docker-compose up -d mongodb postgres kafka zookeeper zipkin
    ```
 
 5. **Build all services**
+
    ```bash
    ./build.sh
    ```
 
 6. **Run services**
+
    ```bash
    # Option 1: Using Docker
    docker-compose up -d
@@ -262,6 +276,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -271,6 +286,7 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) specific
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```bash
 feat(expense): add payment recording endpoint
 
@@ -301,22 +317,26 @@ endpoints in API_DOCUMENTATION.md
 ### Before Submitting
 
 1. **Update your branch**
+
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
 2. **Run tests**
+
    ```bash
    mvn test  # For each service
    ```
 
 3. **Build successfully**
+
    ```bash
    mvn clean package
    ```
 
 4. **Update documentation** if needed
+
    - Update API docs for new endpoints
    - Update README for new features
    - Add/update code comments
@@ -329,6 +349,7 @@ endpoints in API_DOCUMENTATION.md
 ### Submitting Pull Request
 
 1. **Push to your fork**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -339,31 +360,38 @@ endpoints in API_DOCUMENTATION.md
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Related Issue
+
 Closes #(issue number)
 
 ## Changes Made
+
 - Change 1
 - Change 2
 - Change 3
 
 ## Testing
+
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
 - [ ] Manual testing completed
 
 ## Screenshots (if applicable)
+
 Add screenshots here
 
 ## Checklist
+
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
 - [ ] Comments added for complex code
@@ -391,28 +419,28 @@ Add screenshots here
 @RequiredArgsConstructor
 @Slf4j
 public class ExpenseService {
-    
+
     private final ExpenseRepository expenseRepository;
-    
+
     /**
      * Calculate user balance for a specific group
-     * 
+     *
      * @param userId User ID
      * @param groupId Group ID
      * @return Balance amount
      */
     public BigDecimal calculateBalance(String userId, Long groupId) {
         log.info("Calculating balance for user: {} in group: {}", userId, groupId);
-        
+
         // Fetch expenses
         List<Expense> expenses = expenseRepository.findByGroupId(groupId);
-        
+
         // Calculate balance
         BigDecimal balance = expenses.stream()
             .filter(e -> e.getPaidBy().equals(userId))
             .map(Expense::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
         log.debug("Balance calculated: {}", balance);
         return balance;
     }
@@ -420,6 +448,7 @@ public class ExpenseService {
 ```
 
 **Follow:**
+
 - Use `@Slf4j` for logging
 - Use `@RequiredArgsConstructor` for dependency injection
 - Add JavaDoc for public methods
@@ -434,20 +463,20 @@ public class ExpenseService {
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
-    
+
     // GET for retrieving resources
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ExpenseResponse>> getExpense(@PathVariable Long id) {
         // Implementation
     }
-    
+
     // POST for creating resources
     @PostMapping
     public ResponseEntity<ApiResponse<ExpenseResponse>> createExpense(
             @Valid @RequestBody CreateExpenseRequest request) {
         // Implementation
     }
-    
+
     // PUT for full updates
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ExpenseResponse>> updateExpense(
@@ -455,7 +484,7 @@ public class ExpenseController {
             @Valid @RequestBody UpdateExpenseRequest request) {
         // Implementation
     }
-    
+
     // PATCH for partial updates
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<Void>> updateStatus(
@@ -463,7 +492,7 @@ public class ExpenseController {
             @RequestParam String status) {
         // Implementation
     }
-    
+
     // DELETE for removing resources
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteExpense(@PathVariable Long id) {
@@ -473,6 +502,7 @@ public class ExpenseController {
 ```
 
 **Follow:**
+
 - Use proper HTTP methods (GET, POST, PUT, PATCH, DELETE)
 - Return meaningful status codes
 - Use `@Valid` for request validation
@@ -486,17 +516,17 @@ public class ExpenseController {
 // ✅ Good error handling
 @Service
 public class GroupService {
-    
+
     public GroupResponse getGroup(Long groupId, String userId) {
         Group group = groupRepository.findById(groupId)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Group not found with id: " + groupId));
-                
+
         if (!group.isMember(userId)) {
             throw new UnauthorizedException(
                 "User is not a member of this group");
         }
-        
+
         return convertToResponse(group);
     }
 }
@@ -516,13 +546,13 @@ public class ResourceNotFoundException extends RuntimeException {
 ```java
 @ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
-    
+
     @Mock
     private ExpenseRepository expenseRepository;
-    
+
     @InjectMocks
     private ExpenseService expenseService;
-    
+
     @Test
     @DisplayName("Should calculate balance correctly for user with expenses")
     void shouldCalculateBalanceCorrectly() {
@@ -533,13 +563,13 @@ class ExpenseServiceTest {
             createExpense(userId, new BigDecimal("50.00")),
             createExpense(userId, new BigDecimal("30.00"))
         );
-        
+
         when(expenseRepository.findByGroupId(groupId))
             .thenReturn(expenses);
-        
+
         // When
         BigDecimal balance = expenseService.calculateBalance(userId, groupId);
-        
+
         // Then
         assertThat(balance).isEqualByComparingTo(new BigDecimal("80.00"));
         verify(expenseRepository).findByGroupId(groupId);
@@ -548,6 +578,7 @@ class ExpenseServiceTest {
 ```
 
 **Guidelines:**
+
 - Write tests for all public methods
 - Use descriptive test names
 - Follow Arrange-Act-Assert pattern
@@ -560,10 +591,10 @@ class ExpenseServiceTest {
 @SpringBootTest
 @AutoConfigureMockMvc
 class ExpenseControllerIntegrationTest {
-    
+
     @Autowired
     private MockMvc mockMvc;
-    
+
     @Test
     void shouldCreateExpenseSuccessfully() throws Exception {
         CreateExpenseRequest request = CreateExpenseRequest.builder()
@@ -571,7 +602,7 @@ class ExpenseControllerIntegrationTest {
             .amount(new BigDecimal("50.00"))
             .groupId(1L)
             .build();
-        
+
         mockMvc.perform(post("/api/expenses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-User-Id", "user123")
@@ -606,27 +637,27 @@ Update `docs/FRONTEND_API_REFERENCE.md` for new endpoints:
 **Request Body:**
 \`\`\`json
 {
-  "description": "Dinner",
-  "amount": 50.00,
-  "groupId": 1,
-  "category": "FOOD",
-  "splits": [
-    {"userId": "user1", "amount": 25.00},
-    {"userId": "user2", "amount": 25.00}
-  ]
+"description": "Dinner",
+"amount": 50.00,
+"groupId": 1,
+"category": "FOOD",
+"splits": [
+{"userId": "user1", "amount": 25.00},
+{"userId": "user2", "amount": 25.00}
+]
 }
 \`\`\`
 
 **Success Response (201):**
 \`\`\`json
 {
-  "success": true,
-  "message": "Expense created successfully",
-  "data": {
-    "id": 1,
-    "description": "Dinner",
-    "amount": 50.00
-  }
+"success": true,
+"message": "Expense created successfully",
+"data": {
+"id": 1,
+"description": "Dinner",
+"amount": 50.00
+}
 }
 \`\`\`
 ```
@@ -638,37 +669,36 @@ Update `docs/FRONTEND_API_REFERENCE.md` for new endpoints:
 ```typescript
 // expense-form.component.ts
 @Component({
-  selector: 'app-expense-form',
-  templateUrl: './expense-form.component.html',
-  styleUrls: ['./expense-form.component.css']
+  selector: "app-expense-form",
+  templateUrl: "./expense-form.component.html",
+  styleUrls: ["./expense-form.component.css"],
 })
 export class ExpenseFormComponent implements OnInit {
   expenseForm: FormGroup;
-  
+
   constructor(
     private fb: FormBuilder,
     private expenseService: ExpenseService
   ) {}
-  
+
   ngOnInit(): void {
     this.initForm();
   }
-  
+
   private initForm(): void {
     this.expenseForm = this.fb.group({
-      description: ['', Validators.required],
-      amount: ['', [Validators.required, Validators.min(0)]],
-      groupId: ['', Validators.required]
+      description: ["", Validators.required],
+      amount: ["", [Validators.required, Validators.min(0)]],
+      groupId: ["", Validators.required],
     });
   }
-  
+
   onSubmit(): void {
     if (this.expenseForm.valid) {
-      this.expenseService.createExpense(this.expenseForm.value)
-        .subscribe({
-          next: (response) => console.log('Success'),
-          error: (error) => console.error('Error', error)
-        });
+      this.expenseService.createExpense(this.expenseForm.value).subscribe({
+        next: (response) => console.log("Success"),
+        error: (error) => console.error("Error", error),
+      });
     }
   }
 }
@@ -677,6 +707,7 @@ export class ExpenseFormComponent implements OnInit {
 ## 🏆 Recognition
 
 Contributors will be:
+
 - Listed in our `CONTRIBUTORS.md` file
 - Mentioned in release notes
 - Added to GitHub contributors page
@@ -697,7 +728,7 @@ By contributing, you agree that your contributions will be licensed under the sa
 
 ## 🌟 Thank You!
 
-Your contributions make SplitIt better for everyone. Whether you're fixing bugs, adding features, improving docs, or helping others - **every contribution matters**! 
+Your contributions make SplitIt better for everyone. Whether you're fixing bugs, adding features, improving docs, or helping others - **every contribution matters**!
 
 Happy coding! 🚀
 
