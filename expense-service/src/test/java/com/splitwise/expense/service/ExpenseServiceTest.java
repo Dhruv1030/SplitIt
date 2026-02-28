@@ -4,6 +4,7 @@ import com.splitwise.expense.client.ActivityClient;
 import com.splitwise.expense.dto.*;
 import com.splitwise.expense.exception.BadRequestException;
 import com.splitwise.expense.exception.ResourceNotFoundException;
+import com.splitwise.expense.exception.UnauthorizedException;
 import com.splitwise.expense.model.Expense;
 import com.splitwise.expense.model.ExpenseSplit;
 import com.splitwise.expense.model.SplitType;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,9 +38,6 @@ class ExpenseServiceTest {
 
     @Mock
     private SplitCalculatorService splitCalculatorService;
-
-    @Mock
-    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Mock
     private ActivityClient activityClient;
@@ -112,7 +109,6 @@ class ExpenseServiceTest {
         assertEquals(SplitType.EQUAL, response.getSplitType());
         verify(expenseRepository).save(any(Expense.class));
         verify(expenseSplitRepository).saveAll(anyList());
-        verify(kafkaTemplate).send(eq("expense-events"), any());
     }
 
     @Test
@@ -167,7 +163,7 @@ class ExpenseServiceTest {
     void getExpenseById_WhenExists_ShouldReturnExpense() {
         // Arrange
         expense.setSplits(expenseSplits);
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findByIdAndIsActiveTrue(1L)).thenReturn(Optional.of(expense));
 
         // Act
         ExpenseResponse response = expenseService.getExpenseById(1L, "user1");
@@ -208,7 +204,7 @@ class ExpenseServiceTest {
     @Test
     void updateExpense_WhenAuthorized_ShouldSucceed() {
         // Arrange
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findByIdAndIsActiveTrue(1L)).thenReturn(Optional.of(expense));
         when(splitCalculatorService.calculateSplits(any(CreateExpenseRequest.class)))
                 .thenReturn(expenseSplits);
         when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
@@ -233,13 +229,13 @@ class ExpenseServiceTest {
     @Test
     void updateExpense_WhenUnauthorized_ShouldThrowException() {
         // Arrange
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findByIdAndIsActiveTrue(1L)).thenReturn(Optional.of(expense));
 
         CreateExpenseRequest updateRequest = new CreateExpenseRequest();
         updateRequest.setDescription("Updated Dinner");
 
         // Act & Assert
-        assertThrows(BadRequestException.class, () -> {
+        assertThrows(UnauthorizedException.class, () -> {
             expenseService.updateExpense(1L, updateRequest, "user2");
         });
     }
@@ -247,23 +243,23 @@ class ExpenseServiceTest {
     @Test
     void deleteExpense_WhenAuthorized_ShouldSucceed() {
         // Arrange
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findByIdAndIsActiveTrue(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
 
         // Act
         expenseService.deleteExpense(1L, "user1");
 
         // Assert
-        verify(expenseRepository).delete(expense);
-        verify(kafkaTemplate).send(eq("expense-events"), any());
+        verify(expenseRepository).save(any(Expense.class));
     }
 
     @Test
     void deleteExpense_WhenUnauthorized_ShouldThrowException() {
         // Arrange
-        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findByIdAndIsActiveTrue(1L)).thenReturn(Optional.of(expense));
 
         // Act & Assert
-        assertThrows(BadRequestException.class, () -> {
+        assertThrows(UnauthorizedException.class, () -> {
             expenseService.deleteExpense(1L, "user2");
         });
     }
