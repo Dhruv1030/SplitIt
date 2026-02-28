@@ -7,6 +7,7 @@ import com.splitwise.user.dto.UserResponse;
 import com.splitwise.user.exception.InvalidCredentialsException;
 import com.splitwise.user.exception.ResourceNotFoundException;
 import com.splitwise.user.exception.UserAlreadyExistsException;
+import com.splitwise.user.model.RefreshToken;
 import com.splitwise.user.model.User;
 import com.splitwise.user.repository.UserRepository;
 import com.splitwise.user.security.JwtTokenProvider;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -37,6 +39,9 @@ class UserServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private UserService userService;
@@ -75,6 +80,12 @@ class UserServiceTest {
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtTokenProvider.generateToken(anyString(), anyString(), anyList())).thenReturn("test-token");
+        RefreshToken refreshToken = RefreshToken.builder()
+                .id("rt1")
+                .token("test-refresh-token")
+                .expiryDate(Instant.now().plusSeconds(86400))
+                .build();
+        when(refreshTokenService.createRefreshToken(anyString())).thenReturn(refreshToken);
 
         // When
         AuthResponse response = userService.registerUser(userRequest);
@@ -83,6 +94,7 @@ class UserServiceTest {
         assertNotNull(response);
         assertNotNull(response.getToken());
         assertEquals("test-token", response.getToken());
+        assertEquals("test-refresh-token", response.getRefreshToken());
         assertEquals(user.getId(), response.getUser().getId());
         assertEquals(user.getEmail(), response.getUser().getEmail());
 
@@ -116,6 +128,12 @@ class UserServiceTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(jwtTokenProvider.generateToken(anyString(), anyString(), anyList())).thenReturn("test-token");
+        RefreshToken refreshToken = RefreshToken.builder()
+                .id("rt1")
+                .token("test-refresh-token")
+                .expiryDate(Instant.now().plusSeconds(86400))
+                .build();
+        when(refreshTokenService.createRefreshToken(anyString())).thenReturn(refreshToken);
 
         // When
         AuthResponse response = userService.loginUser(loginRequest);
@@ -123,6 +141,7 @@ class UserServiceTest {
         // Then
         assertNotNull(response);
         assertEquals("test-token", response.getToken());
+        assertEquals("test-refresh-token", response.getRefreshToken());
         assertEquals(user.getId(), response.getUser().getId());
 
         verify(userRepository, times(1)).findByEmail(loginRequest.getEmail());
