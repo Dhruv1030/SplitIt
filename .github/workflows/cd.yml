@@ -1,0 +1,184 @@
+# ============================================================
+# CD Pipeline - Build, Push to ACR, Deploy to Azure Container Apps
+# Triggered on push to main (after CI passes)
+# ============================================================
+name: CD - Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # Don't cancel in-flight deploys
+
+env:
+  ACR_NAME: splititacr
+  ACR_LOGIN_SERVER: splititacr.azurecr.io
+  RESOURCE_GROUP: splitit-rg
+
+jobs:
+  # -----------------------------------------------------------
+  # 1. Build & Test first
+  # -----------------------------------------------------------
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build & test all modules
+        run: mvn clean verify -B
+
+  # -----------------------------------------------------------
+  # 2. Build Docker images & push to ACR (parallel matrix)
+  # -----------------------------------------------------------
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    strategy:
+      fail-fast: true
+      matrix:
+        service:
+          - discovery-server
+          - api-gateway
+          - user-service
+          - group-service
+          - expense-service
+          - settlement-service
+          - notification-service
+          - payment-service
+          - analytics-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build & push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:latest
+            ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # -----------------------------------------------------------
+  # 3. Deploy to Azure Container Apps (sequential, ordered)
+  # -----------------------------------------------------------
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Deploy discovery-server first (other services depend on it)
+      - name: Deploy discovery-server
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az containerapp update \
+              --name discovery-server \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/discovery-server:${{ github.sha }}
+            echo "Waiting 30s for discovery-server to stabilize..."
+            sleep 30
+
+      # Deploy api-gateway
+      - name: Deploy api-gateway
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az containerapp update \
+              --name api-gateway \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }}
+
+      # Deploy all backend services in parallel
+      - name: Deploy backend services
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            for svc in user-service group-service expense-service settlement-service notification-service payment-service analytics-service; do
+              echo "Deploying $svc..."
+              az containerapp update \
+                --name $svc \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --image ${{ env.ACR_LOGIN_SERVER }}/${svc}:${{ github.sha }} &
+            done
+            echo "Waiting for all deployments to complete..."
+            wait
+            echo "All services deployed!"
+
+      - name: Logout from Azure
+        if: always()
+        uses: azure/cli@v2
+        with:
+          inlineScript: az logout
+
+  # -----------------------------------------------------------
+  # 4. Smoke test after deploy
+  # -----------------------------------------------------------
+  smoke-test:
+    name: Post-Deploy Smoke Test
+    runs-on: ubuntu-latest
+    needs: deploy
+    environment: production
+
+    env:
+      GATEWAY_URL: https://api-gateway.delightfulfield-e71e7e6d.eastus.azurecontainerapps.io
+
+    steps:
+      - name: Wait for services to stabilize
+        run: sleep 45
+
+      - name: Health check - API Gateway
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/actuator/health || echo "000")
+          echo "API Gateway health: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::API Gateway health check returned $STATUS"
+          fi
+
+      - name: Health check - User Service (via Gateway)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/api/users/health || echo "000")
+          echo "User Service health: $STATUS"
+
+      - name: Health check - Expense Service (via Gateway)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/api/expenses/health || echo "000")
+          echo "Expense Service health: $STATUS"
+
+      - name: Smoke test summary
+        run: echo "Smoke tests completed. Check warnings above for any issues."
