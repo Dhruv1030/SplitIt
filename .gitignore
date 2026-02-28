@@ -40,6 +40,8 @@ application-dev.yml
 fix-mongo-uris.sh
 init-db.sh
 deploy-azure.sh
+*.sh
+!gradlew
 
 # Docker volumes
 mongodb-data/
@@ -56,3 +58,8 @@ postgres-data/
 *.zip
 *.tar.gz
 *.rar
+
+# Backup files
+*.backup
+*.bak
+*.orig
