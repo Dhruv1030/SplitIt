@@ -4,6 +4,9 @@ import com.splitwise.group.dto.AddMemberRequest;
 import com.splitwise.group.dto.CreateGroupRequest;
 import com.splitwise.group.dto.GroupResponse;
 import com.splitwise.group.dto.UpdateGroupRequest;
+import com.splitwise.group.client.ActivityClient;
+import com.splitwise.group.client.EmailNotificationClient;
+import com.splitwise.group.client.UserClient;
 import com.splitwise.group.exception.BadRequestException;
 import com.splitwise.group.exception.ResourceNotFoundException;
 import com.splitwise.group.exception.UnauthorizedException;
@@ -26,6 +29,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +40,15 @@ class GroupServiceTest {
 
     @Mock
     private GroupMemberRepository groupMemberRepository;
+
+    @Mock
+    private UserClient userClient;
+
+    @Mock
+    private ActivityClient activityClient;
+
+    @Mock
+    private EmailNotificationClient emailNotificationClient;
 
     @InjectMocks
     private GroupService groupService;
@@ -67,6 +80,13 @@ class GroupServiceTest {
                 .build();
 
         testMember.setGroup(testGroup);
+
+        // Mock UserClient to return user details when mapping group responses
+        UserClient.UserDTO mockUser = new UserClient.UserDTO();
+        mockUser.setId(testUserId);
+        mockUser.setName("Test User");
+        mockUser.setEmail("test@example.com");
+        lenient().when(userClient.getUserById(anyString())).thenReturn(mockUser);
     }
 
     @Test
