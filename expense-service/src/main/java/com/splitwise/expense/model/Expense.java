@@ -39,6 +39,9 @@ public class Expense {
     @Column(nullable = false)
     private String paidBy; // User ID who paid
 
+    @Column
+    private String createdBy; // User ID who recorded this expense
+
     @Column(length = 50)
     private String category; // FOOD, TRANSPORT, ACCOMMODATION, ENTERTAINMENT, OTHER
 

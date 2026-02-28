@@ -16,9 +16,13 @@ public interface ExpenseSplitRepository extends JpaRepository<ExpenseSplit, Long
 
     List<ExpenseSplit> findByUserId(String userId);
 
-    @Query("SELECT SUM(s.amount) FROM ExpenseSplit s WHERE s.userId = :userId")
+    // What the current user still owes: their own unpaid splits on expenses someone
+    // else paid
+    @Query("SELECT SUM(s.amount) FROM ExpenseSplit s WHERE s.userId = :userId AND s.isPaid = false AND s.expense.isActive = true AND s.expense.paidBy <> :userId")
     BigDecimal getTotalOwedByUser(@Param("userId") String userId);
 
-    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.paidBy = :userId AND e.isActive = true")
-    BigDecimal getTotalPaidByUser(@Param("userId") String userId);
+    // What others still owe the current user: unpaid splits of other people on
+    // expenses this user paid
+    @Query("SELECT SUM(s.amount) FROM ExpenseSplit s WHERE s.expense.paidBy = :userId AND s.userId <> :userId AND s.isPaid = false AND s.expense.isActive = true")
+    BigDecimal getTotalOwedToUser(@Param("userId") String userId);
 }

@@ -45,4 +45,7 @@ public class User {
     private boolean isActive = true;
 
     private boolean emailVerified;
+
+    @Builder.Default
+    private java.util.Set<Role> roles = new java.util.HashSet<>();
 }

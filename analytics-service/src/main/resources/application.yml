@@ -3,11 +3,19 @@ server:
 spring:
   application:
     name: analytics-service
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
   data:
     mongodb:
       uri: mongodb://admin:admin123@localhost:27017/analyticsdb?authSource=admin
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:9093
 eureka:
   client:
     service-url:

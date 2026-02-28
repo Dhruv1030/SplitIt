@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/settlements")
@@ -97,6 +98,44 @@ public class SettlementController {
             log.error("Error completing settlement: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Send payment reminder to a debtor
+     * 
+     * POST /api/settlements/reminders/send
+     */
+    @PostMapping("/reminders/send")
+    public ResponseEntity<String> sendPaymentReminder(
+            @RequestParam String debtorId,
+            @RequestParam String creditorId,
+            @RequestParam Long groupId,
+            @RequestParam Double amount,
+            @RequestParam(defaultValue = "USD") String currency,
+            @RequestParam(required = false) String notes,
+            @RequestHeader("X-User-Id") String currentUserId) {
+        log.info("Sending payment reminder from {} to {} for group {}", creditorId, debtorId, groupId);
+
+        try {
+            settlementService.sendPaymentReminder(debtorId, creditorId, groupId, amount, currency, notes);
+            return ResponseEntity.ok("Payment reminder sent successfully");
+        } catch (Exception e) {
+            log.error("Error sending payment reminder: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to send payment reminder: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get outstanding settlements for weekly digest
+     * 
+     * GET /api/settlements/outstanding
+     */
+    @GetMapping("/outstanding")
+    public ResponseEntity<List<Map<String, Object>>> getOutstandingSettlements() {
+        log.info("Fetching outstanding settlements for weekly digest");
+        List<Map<String, Object>> outstandingSettlements = settlementService.getOutstandingSettlements();
+        return ResponseEntity.ok(outstandingSettlements);
     }
 
     /**

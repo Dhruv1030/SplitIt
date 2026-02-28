@@ -1,5 +1,7 @@
 package com.splitwise.expense.service;
 
+import com.splitwise.expense.client.ActivityClient;
+import com.splitwise.expense.client.ActivityRequest;
 import com.splitwise.expense.dto.*;
 import com.splitwise.expense.exception.BadRequestException;
 import com.splitwise.expense.exception.ResourceNotFoundException;
@@ -28,17 +30,14 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final ExpenseSplitRepository expenseSplitRepository;
     private final SplitCalculatorService splitCalculatorService;
+    private final ActivityClient activityClient;
 
     /**
      * Create a new expense with calculated splits
      */
     public ExpenseResponse createExpense(CreateExpenseRequest request, String currentUserId) {
-        log.info("Creating expense for group: {}, paid by: {}", request.getGroupId(), request.getPaidBy());
-
-        // Validate that the current user is the payer
-        if (!request.getPaidBy().equals(currentUserId)) {
-            throw new UnauthorizedException("You can only create expenses that you paid for");
-        }
+        log.info("Creating expense for group: {}, paid by: {}, recorded by: {}", request.getGroupId(),
+                request.getPaidBy(), currentUserId);
 
         // Calculate splits using the split calculator
         List<ExpenseSplit> splits = splitCalculatorService.calculateSplits(request);
@@ -50,6 +49,7 @@ public class ExpenseService {
                 .currency(request.getCurrency() != null ? request.getCurrency() : "USD")
                 .groupId(request.getGroupId())
                 .paidBy(request.getPaidBy())
+                .createdBy(currentUserId)
                 .category(request.getCategory())
                 .splitType(request.getSplitType())
                 .receiptUrl(request.getReceiptUrl())
@@ -68,6 +68,10 @@ public class ExpenseService {
         Expense savedExpense = expenseRepository.save(expense);
 
         log.info("Expense created successfully with ID: {}", savedExpense.getId());
+
+        // Log activity
+        logExpenseActivity("EXPENSE_ADDED", savedExpense);
+
         return convertToResponse(savedExpense);
     }
 
@@ -79,8 +83,9 @@ public class ExpenseService {
         Expense expense = expenseRepository.findByIdAndIsActiveTrue(expenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + expenseId));
 
-        // Check if user has access to this expense (either payer or participant)
+        // Check if user has access to this expense (payer, creator, or participant)
         boolean hasAccess = expense.getPaidBy().equals(currentUserId) ||
+                (expense.getCreatedBy() != null && expense.getCreatedBy().equals(currentUserId)) ||
                 expense.getSplits().stream().anyMatch(split -> split.getUserId().equals(currentUserId));
 
         if (!hasAccess) {
@@ -121,9 +126,11 @@ public class ExpenseService {
         Expense expense = expenseRepository.findByIdAndIsActiveTrue(expenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + expenseId));
 
-        // Only the payer can update the expense
-        if (!expense.getPaidBy().equals(currentUserId)) {
-            throw new UnauthorizedException("Only the payer can update this expense");
+        // The person who recorded the expense (or the payer) can update it
+        boolean isCreator = currentUserId.equals(expense.getCreatedBy());
+        boolean isPayer = currentUserId.equals(expense.getPaidBy());
+        if (!isCreator && !isPayer) {
+            throw new UnauthorizedException("Only the person who recorded or paid this expense can update it");
         }
 
         // Recalculate splits
@@ -161,9 +168,11 @@ public class ExpenseService {
         Expense expense = expenseRepository.findByIdAndIsActiveTrue(expenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID: " + expenseId));
 
-        // Only the payer can delete the expense
-        if (!expense.getPaidBy().equals(currentUserId)) {
-            throw new UnauthorizedException("Only the payer can delete this expense");
+        // The person who recorded the expense (or the payer) can delete it
+        boolean isCreator = currentUserId.equals(expense.getCreatedBy());
+        boolean isPayer = currentUserId.equals(expense.getPaidBy());
+        if (!isCreator && !isPayer) {
+            throw new UnauthorizedException("Only the person who recorded or paid this expense can delete it");
         }
 
         expense.setIsActive(false);
@@ -180,37 +189,40 @@ public class ExpenseService {
     public UserBalanceResponse calculateUserBalance(String userId) {
         log.info("Calculating balance for user: {}", userId);
 
-        // Get total amount user owes (from their splits)
+        // What the user still owes others (their unpaid splits on expenses others paid)
         BigDecimal totalOwed = expenseSplitRepository.getTotalOwedByUser(userId);
 
-        // Get total amount user paid (expenses they created)
-        BigDecimal totalPaid = expenseSplitRepository.getTotalPaidByUser(userId);
+        // What others still owe the user (unpaid splits of other people on expenses
+        // this user paid)
+        BigDecimal totalOwedToUser = expenseSplitRepository.getTotalOwedToUser(userId);
 
-        // FIX: Handle null values for new users (database SUM returns null when no rows
-        // match)
+        // Handle null values for users with no matching rows
         BigDecimal totalOwedValue = totalOwed != null ? totalOwed : BigDecimal.ZERO;
-        BigDecimal totalPaidValue = totalPaid != null ? totalPaid : BigDecimal.ZERO;
+        BigDecimal totalOwedToUserValue = totalOwedToUser != null ? totalOwedToUser : BigDecimal.ZERO;
 
-        // Calculate net balance (positive = others owe you, negative = you owe others)
-        BigDecimal netBalance = totalPaidValue.subtract(totalOwedValue);
+        // Net balance: positive = others owe you more than you owe; negative = you owe
+        // more
+        BigDecimal netBalance = totalOwedToUserValue.subtract(totalOwedValue);
 
-        log.debug("Balance calculated for user {} - Paid: {}, Owed: {}, Net: {}",
-                userId, totalPaidValue, totalOwedValue, netBalance);
+        log.debug("Balance calculated for user {} - OwedToUser: {}, Owed: {}, Net: {}",
+                userId, totalOwedToUserValue, totalOwedValue, netBalance);
 
         // Get detailed balances per user
         Map<String, BigDecimal> balances = calculateDetailedBalances(userId);
 
         return UserBalanceResponse.builder()
                 .userId(userId)
-                .totalPaid(totalPaidValue)
-                .totalOwed(totalOwedValue)
+                .totalPaid(totalOwedToUserValue) // "owed to you" — what others owe you
+                .totalOwed(totalOwedValue) // "you owe" — what you owe others
                 .netBalance(netBalance)
                 .balances(balances)
                 .build();
     }
 
     /**
-     * Calculate detailed balances between users
+     * Calculate detailed balances between users.
+     * Positive value for a key means that person owes the current user.
+     * Negative value for a key means the current user owes that person.
      */
     private Map<String, BigDecimal> calculateDetailedBalances(String userId) {
         Map<String, BigDecimal> balances = new HashMap<>();
@@ -221,23 +233,20 @@ public class ExpenseService {
         for (Expense expense : userExpenses) {
             String paidBy = expense.getPaidBy();
 
-            for (ExpenseSplit split : expense.getSplits()) {
-                String splitUserId = split.getUserId();
-
-                // Skip if it's the same user
-                if (splitUserId.equals(userId)) {
-                    continue;
+            if (paidBy.equals(userId)) {
+                // Current user paid: every other participant owes them their split amount
+                for (ExpenseSplit split : expense.getSplits()) {
+                    if (!split.getUserId().equals(userId)) {
+                        balances.merge(split.getUserId(), split.getAmount(), BigDecimal::add);
+                    }
                 }
-
-                BigDecimal amount = split.getAmount();
-
-                if (paidBy.equals(userId)) {
-                    // This user paid, so others owe them
-                    balances.merge(splitUserId, amount, BigDecimal::add);
-                } else {
-                    // Someone else paid, this user owes them
-                    balances.merge(paidBy, amount.negate(), BigDecimal::add);
-                }
+            } else {
+                // Someone else paid: find only THIS user's split — that's what they owe the
+                // payer
+                expense.getSplits().stream()
+                        .filter(s -> s.getUserId().equals(userId))
+                        .findFirst()
+                        .ifPresent(mySplit -> balances.merge(paidBy, mySplit.getAmount().negate(), BigDecimal::add));
             }
         }
 
@@ -298,6 +307,7 @@ public class ExpenseService {
                 .currency(expense.getCurrency())
                 .groupId(expense.getGroupId())
                 .paidBy(expense.getPaidBy())
+                .createdBy(expense.getCreatedBy())
                 .category(expense.getCategory())
                 .splitType(expense.getSplitType())
                 .receiptUrl(expense.getReceiptUrl())
@@ -307,5 +317,33 @@ public class ExpenseService {
                 .updatedAt(expense.getUpdatedAt())
                 .splits(splitResponses)
                 .build();
+    }
+
+    /**
+     * Log activity to activity service
+     */
+    private void logExpenseActivity(String activityType, Expense expense) {
+        try {
+            String actor = expense.getCreatedBy() != null ? expense.getCreatedBy() : expense.getPaidBy();
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType(activityType)
+                    .userId(actor)
+                    .groupId(expense.getGroupId())
+                    .description(String.format("%s added expense '%s' for %s %s (paid by %s)",
+                            actor,
+                            expense.getDescription(),
+                            expense.getCurrency(),
+                            expense.getAmount(),
+                            expense.getPaidBy()))
+                    .metadata(String.format("{\"expenseId\":%d,\"amount\":%s,\"category\":\"%s\"}",
+                            expense.getId(),
+                            expense.getAmount(),
+                            expense.getCategory() != null ? expense.getCategory() : "OTHER"))
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.warn("Failed to log activity: {}", e.getMessage());
+        }
     }
 }

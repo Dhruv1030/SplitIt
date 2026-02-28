@@ -22,6 +22,7 @@ public class ExpenseResponse {
     private String currency;
     private Long groupId;
     private String paidBy;
+    private String createdBy;
     private String category;
     private SplitType splitType;
     private String receiptUrl;

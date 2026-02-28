@@ -1,30 +1,36 @@
 package com.splitwise.settlement.client;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class ActivityClient {
 
     private final RestTemplate restTemplate;
-    private static final String ACTIVITY_SERVICE_URL = "http://notification-service:8085/api/activities";
+    private final String activityServiceUrl;
+
+    public ActivityClient(
+            RestTemplate restTemplate,
+            @Value("${activity.service.url:http://notification-service:8085}") String activityServiceUrl) {
+        this.restTemplate = restTemplate;
+        this.activityServiceUrl = activityServiceUrl;
+    }
 
     /**
-     * Log an activity to the notification service
-     * Non-blocking - failures won't affect the main operation
+     * Log an activity to the notification service (async - non-blocking)
      */
+    @Async
     public void logActivity(ActivityRequest request) {
         try {
             log.debug("Logging activity: {} for group: {}", request.getActivityType(), request.getGroupId());
-            restTemplate.postForEntity(ACTIVITY_SERVICE_URL, request, Object.class);
+            restTemplate.postForEntity(activityServiceUrl + "/api/activities", request, Object.class);
             log.debug("Activity logged successfully");
         } catch (Exception e) {
-            // Log but don't throw - activity logging should never break main functionality
-            log.error("Failed to log activity: {}", e.getMessage());
+            log.warn("Failed to log activity (non-blocking): {}", e.getMessage());
         }
     }
 }

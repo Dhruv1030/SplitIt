@@ -36,6 +36,11 @@ application-local.yml
 application-dev.yml
 *.env
 
+# Scripts with secrets
+fix-mongo-uris.sh
+init-db.sh
+deploy-azure.sh
+
 # Docker volumes
 mongodb-data/
 postgres-data/

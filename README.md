@@ -29,64 +29,108 @@ A production-ready microservices-based expense sharing application built with Sp
 ### ✅ Implemented Features
 
 - **User Management**
-  - User registration and authentication
+
+  - User registration and authentication with JWT
   - Profile management (name, email, phone, currency preferences)
   - Friend search by name or email (`/api/users/search`)
   - Add/remove friends functionality
-  
+
 - **Group Management**
+
   - Create and manage expense groups
-  - Add/remove group members
+  - Add/remove group members with automatic email invitations
   - View group details with member names and emails
   - User groups listing
+  - Activity logging for all group operations
 
 - **Expense Tracking**
-  - Add expenses with multiple split types (Equal, Exact, Percentage)
+
+  - Add expenses with multiple split types (Equal, Exact, Percentage, Shares)
   - Track who paid and who owes
   - Expense history per group
   - User balance calculation with null-safe arithmetic
+  - Automatic activity feed updates for expense operations
 
 - **Settlement & Balance**
+
   - Smart debt simplification algorithm
   - Real-time balance calculation
   - Settlement suggestions (optimized payment plans)
+  - Record settlements with automatic email confirmations
   - Group balance overview
+  - Payment reminder system (manual + automated weekly digest)
+
+- **Activity Feed** ✨ NEW
+
+  - Complete timeline of all group and user activities
+  - Real-time activity logging across all services
+  - Paginated activity history with filters
+  - Activity enrichment with user and group names
+  - 7 REST endpoints for activity management
+  - Integration with Expense, Group, and Settlement services
+
+- **Email Notifications** ✨ NEW
+
+  - Production-ready Gmail SMTP integration
+  - **Payment Reminders** - Remind debtors to settle outstanding balances
+  - **Payment Confirmations** - Notify creditors when payments are received
+  - **Group Invitations** - Welcome emails when added to groups
+  - Professional HTML email templates with gradient styling
+  - Automatic emails on settlement recording
+  - Automatic emails on member addition
+  - Weekly Digest Scheduler (Monday 9 AM payment reminders)
 
 - **Microservices Architecture**
+
   - Service discovery with Eureka
   - API Gateway with load balancing
-  - Inter-service communication via RestTemplate
+  - Inter-service communication via RestTemplate/Feign
   - Circuit breaker patterns (Resilience4j)
   - Distributed tracing with Zipkin
+  - Activity logging integration across services
+  - Email notification integration across services
+
+- **API Documentation** ✨ NEW
+
+  - Comprehensive Swagger/OpenAPI docs for all 6 microservices
+  - Interactive API testing with Swagger UI
+  - JWT Bearer authentication in Swagger
+  - Request/response schemas with examples
+  - Available at `/swagger-ui/index.html` on each service
 
 - **DevOps & Deployment**
   - Docker containerization for all services
   - Docker Compose orchestration
   - Health checks and monitoring
   - Automated build scripts
+  - PostgreSQL for transactional data
+  - MongoDB for user profiles
 
 ### 🔄 In Progress
 
-- Payment gateway integration
-- Real-time notifications via Kafka
-- Analytics dashboard and insights
-- Email notification system
+- Unit & Integration Tests (targeting 80%+ coverage)
+- Security Enhancements (refresh tokens, RBAC, rate limiting)
+- Performance Optimization (Redis caching, query optimization)
+- Frontend Development (Angular/React UI)
 
 ### 🚀 Planned Features
 
 See our [Development Roadmap](#-development-roadmap) for upcoming features including:
-- Activity feed and history
+
+- Payment gateway integration (Stripe/PayPal)
+- Real-time notifications via Kafka/WebSocket
+- Analytics dashboard and insights
 - File attachments for receipts
 - Recurring expenses
-- Multi-currency support
-- Advanced analytics
+- Multi-currency support with conversion
 - Mobile app support
-                    │
-              ┌─────▼──────┐
-              │ PostgreSQL │
-              │   (5432)   │
-              └────────────┘
-```
+  │
+  ┌─────▼──────┐
+  │ PostgreSQL │
+  │ (5432) │
+  └────────────┘
+
+````
 
 ## 🎯 Services
 
@@ -95,10 +139,10 @@ See our [Development Roadmap](#-development-roadmap) for upcoming features inclu
 | **Discovery Server** | 8761 | - | ✅ Running | Eureka service registry |
 | **API Gateway** | 8080 | - | ✅ Running | Entry point, routing, circuit breakers |
 | **User Service** | 8081 | MongoDB | ✅ Running | User auth, profile, friend management |
-| **Group Service** | 8082 | PostgreSQL | ✅ Running | Group & member management |
-| **Expense Service** | 8083 | PostgreSQL | ✅ Running | Expense tracking & splitting |
-| **Settlement Service** | 8084 | PostgreSQL | ✅ Running | Balance calculation & debt optimization |
-| **Notification Service** | 8085 | - | 🔄 In Progress | Event-driven notifications |
+| **Group Service** | 8082 | PostgreSQL | ✅ Running | Group & member management, activity logging, email invites |
+| **Expense Service** | 8083 | PostgreSQL | ✅ Running | Expense tracking & splitting, activity logging |
+| **Settlement Service** | 8084 | PostgreSQL | ✅ Running | Balance calculation, debt optimization, email notifications |
+| **Notification Service** | 8085 | PostgreSQL | ✅ Running | Activity feed (7 endpoints), Email notifications (4 types), Weekly digest |
 | **Payment Service** | 8086 | PostgreSQL | 🔄 In Progress | Payment processing |
 | **Analytics Service** | 8087 | MongoDB | 🔄 In Progress | Usage analytics & insights |
 
@@ -108,7 +152,7 @@ See our [Development Roadmap](#-development-roadmap) for upcoming features inclu
 |---------|------|--------|-------------|
 | **MongoDB** | 27017 | ✅ Running | Document database |
 | **PostgreSQL** | 5432 | ✅ Running | Relational database |
-| **Kafka** | 9092 | ✅ Running | Event streaming |
+| **Kafka** | 9093 | ✅ Running | Event streaming |
 | **Zookeeper** | 2181 | ✅ Running | Kafka coordination |
 | **Zipkin** | 9411 | ✅ Running | Distributed tracing |
 
@@ -122,10 +166,14 @@ See our [Development Roadmap](#-development-roadmap) for upcoming features inclu
   - **Gateway**: API routing, load balancing, and circuit breakers
   - **OpenFeign**: Declarative REST clients
   - **Resilience4j**: Circuit breaker and fault tolerance
+- **Thymeleaf**: HTML email template engine
+- **JavaMailSender**: SMTP email integration with Gmail
+- **SpringDoc OpenAPI**: Interactive API documentation (Swagger)
+- **Spring Scheduling**: Cron-based task scheduling (@Scheduled)
 
 ### Databases
 - **MongoDB**: User profiles, analytics data, document storage
-- **PostgreSQL**: Transactional data (groups, expenses, payments, settlements)
+- **PostgreSQL**: Transactional data (groups, expenses, payments, settlements, activities)
 
 ### Messaging & Events
 - **Apache Kafka**: Event streaming and asynchronous communication
@@ -160,7 +208,7 @@ See our [Development Roadmap](#-development-roadmap) for upcoming features inclu
 ```bash
 git clone https://github.com/Dhruv1030/SplitIt.git
 cd SplitIt
-```
+````
 
 ### 2. Build All Services
 
@@ -179,11 +227,13 @@ docker-compose up -d
 Wait 30-60 seconds for all services to register with Eureka, then check:
 
 **Eureka Dashboard** (view registered services):
+
 ```bash
 open http://localhost:8761
 ```
 
 **Service Health Checks**:
+
 ```bash
 # Check all services via Gateway
 curl http://localhost:8080/actuator/health
@@ -195,6 +245,7 @@ curl http://localhost:8081/actuator/health
 ### 5. Test the API
 
 **Register a new user**:
+
 ```bash
 curl -X POST http://localhost:8080/api/users/register \
   -H "Content-Type: application/json" \
@@ -208,12 +259,14 @@ curl -X POST http://localhost:8080/api/users/register \
 ```
 
 **Search for users**:
+
 ```bash
 curl -X GET "http://localhost:8080/api/users/search?query=john" \
   -H "Authorization: Bearer <token>"
 ```
 
 **Create a group**:
+
 ```bash
 curl -X POST http://localhost:8080/api/groups \
   -H "Content-Type: application/json" \
@@ -227,6 +280,7 @@ curl -X POST http://localhost:8080/api/groups \
 ```
 
 **Add an expense**:
+
 ```bash
 curl -X POST http://localhost:8080/api/expenses \
   -H "Content-Type: application/json" \
@@ -243,9 +297,38 @@ curl -X POST http://localhost:8080/api/expenses \
 ```
 
 **Get settlement suggestions**:
+
 ```bash
 curl -X GET http://localhost:8080/api/settlements/group/1/suggestions \
   -H "Authorization: Bearer <token>"
+```
+
+**View activity feed**:
+
+```bash
+curl http://localhost:8080/api/activities/group/1/recent
+```
+
+**Test email notifications**:
+
+```bash
+curl -X POST http://localhost:8080/api/notifications/test \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "test@example.com",
+    "subject": "Test Email",
+    "body": "Testing email notifications"
+  }'
+```
+
+**Access Swagger UI** for interactive API testing:
+
+```
+http://localhost:8081/swagger-ui/index.html  # User Service
+http://localhost:8082/swagger-ui/index.html  # Group Service
+http://localhost:8083/swagger-ui/index.html  # Expense Service
+http://localhost:8084/swagger-ui/index.html  # Settlement Service
+http://localhost:8085/swagger-ui/index.html  # Notification Service
 ```
 
 ## 📚 API Documentation
@@ -253,11 +336,16 @@ curl -X GET http://localhost:8080/api/settlements/group/1/suggestions \
 ### Complete API Reference
 
 For detailed API documentation including all endpoints, request/response formats, and examples, see:
+
 - **[FRONTEND_API_REFERENCE.md](docs/FRONTEND_API_REFERENCE.md)** - Comprehensive API guide for frontend integration
+- **[ACTIVITY_FEED_IMPLEMENTATION.md](docs/ACTIVITY_FEED_IMPLEMENTATION.md)** - Activity Feed API documentation
+- **[EMAIL_INTEGRATION_COMPLETED.md](docs/EMAIL_INTEGRATION_COMPLETED.md)** - Email Notifications API guide
+- **Swagger UI**: Interactive API docs at `http://localhost:{port}/swagger-ui/index.html` for each service
 
 ### Quick Reference
 
 #### User Service (`/api/users`)
+
 - `POST /register` - Register new user
 - `POST /login` - User authentication
 - `GET /{id}` - Get user profile
@@ -268,16 +356,18 @@ For detailed API documentation including all endpoints, request/response formats
 - `GET /{id}/friends` - Get user's friends
 
 #### Group Service (`/api/groups`)
+
 - `POST /` - Create new group
 - `GET /{id}` - Get group details (includes member names)
 - `PUT /{id}` - Update group
 - `DELETE /{id}` - Delete group
-- `POST /{id}/members` - Add member to group
+- `POST /{id}/members` - Add member to group (sends invitation email)
 - `DELETE /{id}/members/{memberId}` - Remove member
 - `GET /user/{userId}` - Get user's groups
 
 #### Expense Service (`/api/expenses`)
-- `POST /` - Create expense
+
+- `POST /` - Create expense (logs activity automatically)
 - `GET /{id}` - Get expense details
 - `PUT /{id}` - Update expense
 - `DELETE /{id}` - Delete expense
@@ -286,10 +376,30 @@ For detailed API documentation including all endpoints, request/response formats
 - `GET /user/{userId}/balance` - Get user balance
 
 #### Settlement Service (`/api/settlements`)
+
 - `GET /group/{groupId}/suggestions` - Get optimized payment plan
 - `GET /group/{groupId}` - Get all settlements
-- `POST /record` - Record a settlement payment
+- `POST /record` - Record a settlement payment (sends confirmation email)
 - `GET /user/{userId}` - Get user's settlements
+- `GET /outstanding` - Get all outstanding settlements (for weekly digest)
+- `POST /reminders/send` - Manually send payment reminders
+
+#### Activity Feed (`/api/activities`) ✨ NEW
+
+- `POST /` - Log new activity
+- `GET /group/{groupId}` - Get group activities (paginated)
+- `GET /group/{groupId}/recent` - Get last 10 activities
+- `GET /user/{userId}` - Get user activities (paginated)
+- `GET /group/{groupId}/range` - Get activities by date range
+- `GET /group/{groupId}/count` - Get activity count
+- `GET /health` - Health check
+
+#### Email Notifications (`/api/notifications`) ✨ NEW
+
+- `POST /payment-reminder` - Send payment reminder email
+- `POST /payment-received` - Send payment confirmation email
+- `POST /group-invitation` - Send group invitation email
+- `POST /test` - Test email configuration
 
 ## 🧪 Testing
 
@@ -322,6 +432,7 @@ sleep 60
 ### Manual API Testing
 
 Use the API examples in the [Quick Start](#-quick-start) section or import our Postman collection:
+
 - See `docs/FRONTEND_API_REFERENCE.md` for detailed request/response examples
 
 ## 📊 Monitoring
@@ -398,23 +509,27 @@ SplitIt/
 ### Running Locally (Without Docker)
 
 1. Start infrastructure services:
+
 ```bash
 docker-compose up -d mongodb postgres kafka zookeeper zipkin
 ```
 
 2. Start Discovery Server:
+
 ```bash
 cd discovery-server
 mvn spring-boot:run
 ```
 
 3. Start API Gateway:
+
 ```bash
 cd api-gateway
 mvn spring-boot:run
 ```
 
 4. Start individual microservices:
+
 ```bash
 cd [service-name]
 mvn spring-boot:run
@@ -435,6 +550,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ## 📈 Development Roadmap
 
 ### ✅ Phase 1: Core MVP (Completed)
+
 - [x] User registration and authentication
 - [x] Group creation and management
 - [x] Expense tracking with equal splits
@@ -443,55 +559,75 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 - [x] Service discovery and API Gateway
 - [x] Docker containerization
 
-### 🔄 Phase 2: Enhanced Features (In Progress)
-- [ ] **Payment Recording** - Record settlements and update balances
-- [ ] **Friend Management** - Enhanced friend requests and acceptance
-- [ ] **Email Notifications** - Notify users of expenses, settlements, invites
-- [ ] **Activity Feed** - Timeline of group and user activities
-- [ ] **JWT Authentication** - Secure API with token-based auth
+### ✅ Phase 2: Enhanced Features (Completed) ✨ NEW
 
-### 🚀 Phase 3: Advanced Features (Planned)
-- [ ] **Multi-Currency Support** - Handle expenses in different currencies
-- [ ] **Unequal Splits** - Split by percentage, shares, or exact amounts
-- [ ] **Receipt Uploads** - Attach receipts/bills to expenses
-- [ ] **Recurring Expenses** - Automatic recurring bill creation
-- [ ] **Analytics Dashboard** - Spending insights and trends
+- [x] **Activity Feed Service** - Complete timeline with 7 REST endpoints
+- [x] **Activity Integration** - Logging across Expense, Group, Settlement services
+- [x] **Email Notifications** - Gmail SMTP with 4 email types
+- [x] **Payment Confirmations** - Automatic emails on settlement recording
+- [x] **Group Invitations** - Automatic emails when members are added
+- [x] **Weekly Digest Scheduler** - Automated Monday 9 AM payment reminders
+- [x] **Swagger/OpenAPI Documentation** - Interactive API docs for all 6 services
+- [x] **User/Group Name Enrichment** - Activity feed shows names instead of IDs
+
+### 🔄 Phase 3: Testing & Quality (In Progress)
+
+- [ ] **Unit & Integration Tests** - 80%+ code coverage across all services
+- [ ] **Security Enhancements** - Refresh tokens, RBAC, rate limiting
+- [ ] **Performance Optimization** - Redis caching, query optimization, monitoring
+- [ ] **Frontend Development** - Angular/React UI with all backend integrations
+
+### 🚀 Phase 4: Advanced Features (Planned)
+
+- [ ] **Multi-Currency Support** - Handle expenses in different currencies with conversion
+- [ ] **Unequal Splits** - Enhanced split by percentage, shares, or exact amounts
+- [ ] **Receipt Uploads** - Attach receipts/bills to expenses with file storage
+- [ ] **Recurring Expenses** - Automatic recurring bill creation with schedules
+- [ ] **Analytics Dashboard** - Spending insights, trends, and visualizations
 - [ ] **Export Reports** - CSV/PDF export of expenses and settlements
 - [ ] **Mobile App** - iOS and Android applications
-- [ ] **Push Notifications** - Real-time mobile notifications
-- [ ] **Payment Gateway Integration** - Stripe/PayPal integration
+- [ ] **Real-time Notifications** - WebSocket/Kafka for instant updates
+- [ ] **Payment Gateway Integration** - Stripe/PayPal integration for actual payments
 - [ ] **Group Roles & Permissions** - Admin/member role management
+- [ ] **Activity Comments** - Discussion threads on activities
+- [ ] **Budget Tracking** - Set and monitor group/category budgets
 
-See our [todo list](.github/TODO.md) for detailed task tracking.
+See our [todo list](TODO.md) for detailed task tracking.
 
 ## 🐳 Docker Commands
 
 ### Start all services
+
 ```bash
 docker-compose up -d
 ```
 
 ### Stop all services
+
 ```bash
 docker-compose down
 ```
 
 ### Rebuild and restart
+
 ```bash
 docker-compose up -d --build
 ```
 
 ### View logs
+
 ```bash
 docker-compose logs -f [service-name]
 ```
 
 ### Clean up volumes
+
 ```bash
 docker-compose down -v
 ```
 
 ### Check service status
+
 ```bash
 docker-compose ps
 ```
@@ -549,6 +685,7 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 ### Guidelines
 
 Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+
 - Development setup
 - Coding standards
 - Commit message conventions
@@ -566,6 +703,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Dhruv Patel**
+
 - GitHub: [@Dhruv1030](https://github.com/Dhruv1030)
 - Email: dhruv03.work@gmail.com
 
@@ -578,6 +716,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact
 
 For questions or support:
+
 - **Open an issue**: [GitHub Issues](https://github.com/Dhruv1030/SplitIt/issues)
 - **Email**: dhruv03.work@gmail.com
 - **Discussions**: [GitHub Discussions](https://github.com/Dhruv1030/SplitIt/discussions)
@@ -588,6 +727,7 @@ For questions or support:
 
 **🤝 Contributions are welcome! Check out our [roadmap](#-development-roadmap) for ideas.**
 
-````
+```
 
 ### Upcoming Features
+```
