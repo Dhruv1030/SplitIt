@@ -1,5 +1,9 @@
 package com.splitwise.group.service;
 
+import com.splitwise.group.client.ActivityClient;
+import com.splitwise.group.client.ActivityRequest;
+import com.splitwise.group.client.EmailNotificationClient;
+import com.splitwise.group.client.GroupInvitationEmailRequest;
 import com.splitwise.group.client.UserClient;
 import com.splitwise.group.dto.*;
 import com.splitwise.group.exception.BadRequestException;
@@ -27,6 +31,8 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserClient userClient;
+    private final ActivityClient activityClient;
+    private final EmailNotificationClient emailNotificationClient;
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request, String userId) {
@@ -71,6 +77,9 @@ public class GroupService {
 
         Group savedGroup = groupRepository.save(group);
         log.info("Group created successfully with ID: {}", savedGroup.getId());
+
+        // Log activity
+        logGroupCreatedActivity(savedGroup.getId(), userId, savedGroup.getName());
 
         return mapToGroupResponse(savedGroup);
     }
@@ -198,6 +207,12 @@ public class GroupService {
         Group updatedGroup = groupRepository.save(group);
         log.info("Member added successfully to group: {}", groupId);
 
+        // Log activity
+        logMemberAddedActivity(groupId, requesterId, request.getUserId(), group.getName());
+
+        // Send invitation email
+        sendGroupInvitationEmail(request.getUserId(), requesterId, updatedGroup);
+
         return mapToGroupResponse(updatedGroup);
     }
 
@@ -235,6 +250,9 @@ public class GroupService {
 
         Group updatedGroup = groupRepository.save(group);
         log.info("Member removed successfully from group: {}", groupId);
+
+        // Log activity
+        logMemberRemovedActivity(groupId, requesterId, userIdToRemove, group.getName());
 
         return mapToGroupResponse(updatedGroup);
     }
@@ -321,5 +339,117 @@ public class GroupService {
                 .members(members)
                 .memberCount(members.size())
                 .build();
+    }
+
+    // Activity Logging Helper Methods
+
+    private void logGroupCreatedActivity(Long groupId, String userId, String groupName) {
+        try {
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType("GROUP_CREATED")
+                    .userId(userId)
+                    .groupId(groupId)
+                    .description("Created group '" + groupName + "'")
+                    .metadata("{\"groupName\": \"" + groupName + "\"}")
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.error("Failed to log GROUP_CREATED activity: {}", e.getMessage());
+        }
+    }
+
+    private void logMemberAddedActivity(Long groupId, String addedBy, String newMemberId, String groupName) {
+        try {
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType("MEMBER_ADDED")
+                    .userId(addedBy)
+                    .groupId(groupId)
+                    .targetUserId(newMemberId)
+                    .description("Added a member to group '" + groupName + "'")
+                    .metadata("{\"groupName\": \"" + groupName + "\", \"newMemberId\": \"" + newMemberId + "\"}")
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.error("Failed to log MEMBER_ADDED activity: {}", e.getMessage());
+        }
+    }
+
+    private void logMemberRemovedActivity(Long groupId, String removedBy, String removedMemberId, String groupName) {
+        try {
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType("MEMBER_REMOVED")
+                    .userId(removedBy)
+                    .groupId(groupId)
+                    .targetUserId(removedMemberId)
+                    .description("Removed a member from group '" + groupName + "'")
+                    .metadata(
+                            "{\"groupName\": \"" + groupName + "\", \"removedMemberId\": \"" + removedMemberId + "\"}")
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.error("Failed to log MEMBER_REMOVED activity: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Send group invitation email to new member
+     */
+    private void sendGroupInvitationEmail(String inviteeId, String inviterId, Group group) {
+        try {
+            log.info("Sending group invitation email for group {} to user {}", group.getId(), inviteeId);
+
+            // Fetch user details from User Service
+            String inviteeEmail = fetchUserEmail(inviteeId);
+            String inviteeName = fetchUserName(inviteeId);
+            String inviterName = fetchUserName(inviterId);
+
+            // Build group invitation email request
+            GroupInvitationEmailRequest emailRequest = GroupInvitationEmailRequest.builder()
+                    .inviteeEmail(inviteeEmail)
+                    .inviteeName(inviteeName)
+                    .inviterName(inviterName)
+                    .groupName(group.getName())
+                    .groupId(group.getId())
+                    .groupDescription(group.getDescription())
+                    .build();
+
+            emailNotificationClient.sendGroupInvitationEmail(emailRequest);
+
+        } catch (Exception e) {
+            log.error("Failed to send group invitation email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Fetch user email from User Service
+     */
+    private String fetchUserEmail(String userId) {
+        try {
+            UserClient.UserDTO user = userClient.getUserById(userId);
+            if (user != null && user.getEmail() != null) {
+                return user.getEmail();
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch email for user {}: {}", userId, e.getMessage());
+        }
+        return "user@example.com"; // Fallback
+    }
+
+    /**
+     * Fetch user name from User Service
+     */
+    private String fetchUserName(String userId) {
+        try {
+            UserClient.UserDTO user = userClient.getUserById(userId);
+            if (user != null && user.getName() != null) {
+                return user.getName();
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch name for user {}: {}", userId, e.getMessage());
+        }
+        return "User";
     }
 }

@@ -25,6 +25,7 @@ public class UserService {
         private final UserRepository userRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider jwtTokenProvider;
+        private final RefreshTokenService refreshTokenService;
 
         public AuthResponse registerUser(UserRequest request) {
                 log.info("Registering user with email: {}", request.getEmail());
@@ -44,6 +45,7 @@ public class UserService {
                                 .updatedAt(LocalDateTime.now())
                                 .isActive(true)
                                 .emailVerified(false)
+                                .roles(new java.util.HashSet<>(Arrays.asList(com.splitwise.user.model.Role.ROLE_USER)))
                                 .build();
 
                 user = userRepository.save(user);
@@ -54,8 +56,12 @@ public class UserService {
                                 user.getEmail(),
                                 Arrays.asList("ROLE_USER"));
 
+                com.splitwise.user.model.RefreshToken refreshToken = refreshTokenService
+                                .createRefreshToken(user.getId());
+
                 return AuthResponse.builder()
                                 .token(token)
+                                .refreshToken(refreshToken.getToken())
                                 .user(mapToUserResponse(user))
                                 .build();
         }
@@ -76,13 +82,21 @@ public class UserService {
 
                 log.info("User logged in successfully: {}", user.getId());
 
+                List<String> roles = user.getRoles().stream()
+                                .map(Enum::name)
+                                .collect(Collectors.toList());
+
                 String token = jwtTokenProvider.generateToken(
                                 user.getId(),
                                 user.getEmail(),
-                                Arrays.asList("ROLE_USER"));
+                                roles);
+
+                com.splitwise.user.model.RefreshToken refreshToken = refreshTokenService
+                                .createRefreshToken(user.getId());
 
                 return AuthResponse.builder()
                                 .token(token)
+                                .refreshToken(refreshToken.getToken())
                                 .user(mapToUserResponse(user))
                                 .build();
         }
@@ -174,6 +188,27 @@ public class UserService {
                                                 user.getEmail().toLowerCase().contains(query.toLowerCase()))
                                 .map(this::mapToUserResponse)
                                 .collect(Collectors.toList());
+        }
+
+        public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+                String requestRefreshToken = request.getRefreshToken();
+
+                return refreshTokenService.findByToken(requestRefreshToken)
+                                .map(refreshTokenService::verifyExpiration)
+                                .map(com.splitwise.user.model.RefreshToken::getUser)
+                                .map(user -> {
+                                        List<String> roles = user.getRoles().stream()
+                                                        .map(Enum::name)
+                                                        .collect(Collectors.toList());
+                                        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(),
+                                                        roles);
+                                        return new TokenRefreshResponse(token, requestRefreshToken);
+                                })
+                                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+        }
+
+        public void logout(String userId) {
+                refreshTokenService.deleteByUserId(userId);
         }
 
         private UserResponse mapToUserResponse(User user) {

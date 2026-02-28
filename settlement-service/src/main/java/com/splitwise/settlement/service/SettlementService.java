@@ -1,5 +1,10 @@
 package com.splitwise.settlement.service;
 
+import com.splitwise.settlement.client.ActivityClient;
+import com.splitwise.settlement.client.ActivityRequest;
+import com.splitwise.settlement.client.EmailNotificationClient;
+import com.splitwise.settlement.client.PaymentReceivedEmailRequest;
+import com.splitwise.settlement.client.PaymentReminderEmailRequest;
 import com.splitwise.settlement.dto.*;
 import com.splitwise.settlement.entity.Settlement;
 import com.splitwise.settlement.entity.SettlementStatus;
@@ -22,6 +27,8 @@ public class SettlementService {
 
     private final SettlementRepository settlementRepository;
     private final WebClient.Builder webClientBuilder;
+    private final ActivityClient activityClient;
+    private final EmailNotificationClient emailNotificationClient;
 
     /**
      * Calculate simplified settlements for a group using debt simplification
@@ -241,6 +248,12 @@ public class SettlementService {
 
         log.info("Settlement recorded with ID: {}", settlement.getId());
 
+        // Log activity
+        logPaymentRecordedActivity(settlement);
+
+        // Send payment received email notification
+        sendPaymentReceivedEmail(settlement);
+
         return toResponse(settlement);
     }
 
@@ -289,6 +302,9 @@ public class SettlementService {
 
         settlement = settlementRepository.save(settlement);
 
+        // Log activity
+        logSettlementCompletedActivity(settlement);
+
         return toResponse(settlement);
     }
 
@@ -310,5 +326,243 @@ public class SettlementService {
                 .settledAt(settlement.getSettledAt())
                 .createdAt(settlement.getCreatedAt())
                 .build();
+    }
+
+    // Activity Logging Helper Methods
+
+    private void logPaymentRecordedActivity(Settlement settlement) {
+        try {
+            String description = String.format("Recorded payment of $%.2f from user to user in group",
+                    settlement.getAmount());
+            String metadata = String.format("{\"amount\": %.2f, \"currency\": \"%s\", \"paymentMethod\": \"%s\"}",
+                    settlement.getAmount(), settlement.getCurrency(),
+                    settlement.getPaymentMethod() != null ? settlement.getPaymentMethod() : "N/A");
+
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType("PAYMENT_RECORDED")
+                    .userId(settlement.getPayerId())
+                    .groupId(settlement.getGroupId())
+                    .targetUserId(settlement.getPayeeId())
+                    .description(description)
+                    .metadata(metadata)
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.error("Failed to log PAYMENT_RECORDED activity: {}", e.getMessage());
+        }
+    }
+
+    private void logSettlementCompletedActivity(Settlement settlement) {
+        try {
+            String description = String.format("Settlement of $%.2f completed and confirmed",
+                    settlement.getAmount());
+            String metadata = String.format("{\"amount\": %.2f, \"currency\": \"%s\", \"settlementId\": %d}",
+                    settlement.getAmount(), settlement.getCurrency(), settlement.getId());
+
+            ActivityRequest activityRequest = ActivityRequest.builder()
+                    .activityType("SETTLEMENT_COMPLETED")
+                    .userId(settlement.getPayeeId())
+                    .groupId(settlement.getGroupId())
+                    .targetUserId(settlement.getPayerId())
+                    .description(description)
+                    .metadata(metadata)
+                    .build();
+
+            activityClient.logActivity(activityRequest);
+        } catch (Exception e) {
+            log.error("Failed to log SETTLEMENT_COMPLETED activity: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Send payment received email notification
+     */
+    private void sendPaymentReceivedEmail(Settlement settlement) {
+        try {
+            // Fetch user details
+            Map<String, String> userNames = fetchUserNames(
+                    Set.of(settlement.getPayerId(), settlement.getPayeeId()));
+
+            // Fetch payee email
+            String payeeEmail = fetchUserEmail(settlement.getPayeeId());
+            if (payeeEmail == null) {
+                log.warn("Could not fetch email for payee: {}", settlement.getPayeeId());
+                return;
+            }
+
+            // Fetch group name
+            String groupName = fetchGroupName(settlement.getGroupId());
+
+            PaymentReceivedEmailRequest emailRequest = PaymentReceivedEmailRequest.builder()
+                    .payeeEmail(payeeEmail)
+                    .payeeName(userNames.getOrDefault(settlement.getPayeeId(), "User"))
+                    .payerName(userNames.getOrDefault(settlement.getPayerId(), "User"))
+                    .amount(settlement.getAmount())
+                    .groupName(groupName)
+                    .groupId(settlement.getGroupId())
+                    .currency(settlement.getCurrency())
+                    .paymentMethod(settlement.getPaymentMethod())
+                    .transactionId(settlement.getTransactionId())
+                    .build();
+
+            emailNotificationClient.sendPaymentReceivedEmail(emailRequest);
+
+        } catch (Exception e) {
+            log.error("Failed to send payment received email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Fetch user email from User Service
+     */
+    private String fetchUserEmail(String userId) {
+        try {
+            String url = "http://user-service/api/users/" + userId;
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> user = webClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (user != null && user.containsKey("email")) {
+                return (String) user.get("email");
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch email for user {}: {}", userId, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Fetch group name from Group Service
+     */
+    private String fetchGroupName(Long groupId) {
+        try {
+            String url = "http://group-service/api/groups/" + groupId;
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> group = webClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (group != null && group.containsKey("name")) {
+                return (String) group.get("name");
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch name for group {}: {}", groupId, e.getMessage());
+        }
+        return "Your Group";
+    }
+
+    /**
+     * Send payment reminder email to debtor
+     */
+    public void sendPaymentReminder(String debtorId, String creditorId, Long groupId,
+            Double amount, String currency, String notes) {
+        try {
+            log.info("Sending payment reminder from {} to {} for amount {} {}", creditorId, debtorId, amount, currency);
+
+            // Fetch user details
+            String debtorEmail = fetchUserEmail(debtorId);
+            String debtorName = fetchUserName(debtorId);
+            String creditorName = fetchUserName(creditorId);
+            String groupName = fetchGroupName(groupId);
+
+            // Build payment reminder email request
+            PaymentReminderEmailRequest emailRequest = PaymentReminderEmailRequest.builder()
+                    .debtorEmail(debtorEmail)
+                    .debtorName(debtorName)
+                    .creditorName(creditorName)
+                    .amount(BigDecimal.valueOf(amount))
+                    .groupName(groupName)
+                    .groupId(groupId)
+                    .currency(currency)
+                    .notes(notes != null ? notes : "Please settle your payment when convenient.")
+                    .build();
+
+            emailNotificationClient.sendPaymentReminderEmail(emailRequest);
+
+        } catch (Exception e) {
+            log.error("Failed to send payment reminder email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Fetch user name from User Service
+     */
+    private String fetchUserName(String userId) {
+        try {
+            String url = "http://user-service/api/users/" + userId;
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> user = webClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (user != null && user.containsKey("name")) {
+                return (String) user.get("name");
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch name for user {}: {}", userId, e.getMessage());
+        }
+        return "User";
+    }
+
+    /**
+     * Get outstanding settlements for weekly digest
+     * Returns list of pending settlements with user and group details
+     */
+    public List<Map<String, Object>> getOutstandingSettlements() {
+        log.info("Fetching outstanding settlements for weekly digest");
+
+        List<Settlement> pendingSettlements = settlementRepository
+                .findByStatus(SettlementStatus.PENDING);
+
+        List<Map<String, Object>> outstandingList = new ArrayList<>();
+
+        for (Settlement settlement : pendingSettlements) {
+            try {
+                Map<String, Object> settlementData = new HashMap<>();
+
+                // Fetch debtor (payer) details
+                String debtorEmail = fetchUserEmail(settlement.getPayerId());
+                String debtorName = fetchUserName(settlement.getPayerId());
+
+                // Fetch creditor (payee) details
+                String creditorName = fetchUserName(settlement.getPayeeId());
+
+                // Fetch group name
+                String groupName = fetchGroupName(settlement.getGroupId());
+
+                // Build settlement data map
+                settlementData.put("id", settlement.getId());
+                settlementData.put("debtorEmail", debtorEmail);
+                settlementData.put("debtorName", debtorName);
+                settlementData.put("creditorName", creditorName);
+                settlementData.put("amount", settlement.getAmount().doubleValue());
+                settlementData.put("currency", settlement.getCurrency());
+                settlementData.put("groupName", groupName);
+                settlementData.put("groupId", settlement.getGroupId());
+                settlementData.put("createdAt", settlement.getCreatedAt());
+
+                outstandingList.add(settlementData);
+
+            } catch (Exception e) {
+                log.error("Error processing settlement {}: {}", settlement.getId(), e.getMessage());
+            }
+        }
+
+        log.info("Found {} outstanding settlements", outstandingList.size());
+        return outstandingList;
     }
 }

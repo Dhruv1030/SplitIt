@@ -39,6 +39,11 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     List<Settlement> findByPayeeId(String payeeId);
 
     /**
+     * Find all settlements by status
+     */
+    List<Settlement> findByStatus(SettlementStatus status);
+
+    /**
      * Check if settlement exists between two users in a group
      */
     @Query("SELECT s FROM Settlement s WHERE s.groupId = :groupId AND s.payerId = :payerId AND s.payeeId = :payeeId AND s.status = :status")
