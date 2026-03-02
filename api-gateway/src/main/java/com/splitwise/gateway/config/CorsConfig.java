@@ -24,7 +24,8 @@ public class CorsConfig {
                 "http://localhost:8100", // Ionic default
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:4200",
-                "http://127.0.0.1:5173"));
+                "http://127.0.0.1:5173",
+                "https://delightful-mud-0f191e10f.2.azurestaticapps.net")); // Azure Static Web App
 
         // Allow all HTTP methods
         corsConfig.setAllowedMethods(Arrays.asList(
