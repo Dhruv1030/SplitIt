@@ -10,8 +10,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-  kafka:
-    bootstrap-servers: localhost:9093
+activity:
+  service:
+    url: http://localhost:8085
+
 eureka:
   client:
     service-url:
@@ -35,8 +37,10 @@ spring:
       on-profile: docker
   datasource:
     url: jdbc:postgresql://postgres:5432/splitwise
-  kafka:
-    bootstrap-servers: kafka:29092
+activity:
+  service:
+    url: http://notification-service:8085
+
 eureka:
   client:
     service-url:
