@@ -110,7 +110,8 @@ jobs:
             az containerapp update \
               --name discovery-server \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image ${{ env.ACR_LOGIN_SERVER }}/discovery-server:${{ github.sha }}
+              --image ${{ env.ACR_LOGIN_SERVER }}/discovery-server:${{ github.sha }} \
+              --min-replicas 0 --max-replicas 2
             echo "Waiting 30s for discovery-server to stabilize..."
             sleep 30
 
@@ -122,7 +123,8 @@ jobs:
             az containerapp update \
               --name api-gateway \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }}
+              --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }} \
+              --min-replicas 0 --max-replicas 2
 
       # Deploy all backend services in parallel
       - name: Deploy backend services
@@ -134,7 +136,8 @@ jobs:
               az containerapp update \
                 --name $svc \
                 --resource-group ${{ env.RESOURCE_GROUP }} \
-                --image ${{ env.ACR_LOGIN_SERVER }}/${svc}:${{ github.sha }} &
+                --image ${{ env.ACR_LOGIN_SERVER }}/${svc}:${{ github.sha }} \
+                --min-replicas 0 --max-replicas 2 &
             done
             echo "Waiting for all deployments to complete..."
             wait
