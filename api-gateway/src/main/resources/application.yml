@@ -14,9 +14,12 @@ spring:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
           "[/**]":
-            allowed-origin-patterns: "*"
-            allowed-methods: "*"
-            allowed-headers: "*"
+            allowed-origin-patterns:
+              - "*"
+            allowed-methods:
+              - "*"
+            allowed-headers:
+              - "*"
             allow-credentials: true
             max-age: 3600
 
