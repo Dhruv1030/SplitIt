@@ -33,7 +33,16 @@ spring:
               - OPTIONS
               - HEAD
             allowedHeaders:
-              - "*"
+              - "Authorization"
+              - "Content-Type"
+              - "X-Requested-With"
+              - "Accept"
+              - "Origin"
+              - "Access-Control-Request-Method"
+              - "Access-Control-Request-Headers"
+              - "X-User-Id"
+              - "X-User-Email"
+              - "X-User-Roles"
             allowCredentials: true
             maxAge: 3600
 
