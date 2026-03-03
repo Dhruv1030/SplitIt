@@ -9,6 +9,9 @@ spring:
     username: admin
     password: REDACTED_PASSWORD
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
   jpa:
     hibernate:
       ddl-auto: update
