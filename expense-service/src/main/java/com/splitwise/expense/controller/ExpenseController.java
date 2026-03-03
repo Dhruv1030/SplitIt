@@ -42,6 +42,23 @@ public class ExpenseController {
     }
 
     /**
+     * Get recent expenses for current user
+     */
+    @GetMapping("/recent")
+    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getRecentExpenses(
+            @RequestHeader("X-User-Id") String userId) {
+
+        log.info("Fetching recent expenses for user: {}", userId);
+        List<ExpenseResponse> expenses = expenseService.getUserExpenses(userId);
+        // Return at most 10 recent expenses
+        List<ExpenseResponse> recent = expenses.stream()
+                .limit(10)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(recent));
+    }
+
+    /**
      * Get expense by ID
      */
     @GetMapping("/{id}")
