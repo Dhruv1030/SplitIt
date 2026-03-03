@@ -10,8 +10,7 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      default-filters:
-        - RemoveRequestHeader=Origin
+      default-filters: []
 eureka:
   client:
     service-url:
