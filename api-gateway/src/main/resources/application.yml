@@ -10,41 +10,7 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      # Routes are now configured in RouteConfig.java for better control
-      # This allows us to apply authentication selectively
-      globalcors:
-        corsConfigurations:
-          "[/**]":
-            allowedOrigins:
-              - "http://localhost:3000"
-              - "http://localhost:4200"
-              - "http://localhost:5173"
-              - "http://localhost:8100"
-              - "http://127.0.0.1:3000"
-              - "http://127.0.0.1:4200"
-              - "http://127.0.0.1:5173"
-              - "https://delightful-mud-0f191e10f.2.azurestaticapps.net"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
-              - HEAD
-            allowedHeaders:
-              - "Authorization"
-              - "Content-Type"
-              - "X-Requested-With"
-              - "Accept"
-              - "Origin"
-              - "Access-Control-Request-Method"
-              - "Access-Control-Request-Headers"
-              - "X-User-Id"
-              - "X-User-Email"
-              - "X-User-Roles"
-            allowCredentials: true
-            maxAge: 3600
+      # Routes configured in RouteConfig.java, CORS handled in JwtAuthenticationFilter
 
 eureka:
   client:
