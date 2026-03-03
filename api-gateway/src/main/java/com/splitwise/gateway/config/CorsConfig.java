@@ -26,49 +26,51 @@ import java.util.Set;
 @Configuration
 public class CorsConfig {
 
-    private static final Set<String> ALLOWED_ORIGINS = Set.of(
-            "http://localhost:3000",
-            "http://localhost:4200",
-            "http://localhost:5173",
-            "http://localhost:8100",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:4200",
-            "http://127.0.0.1:5173",
-            "https://delightful-mud-0f191e10f.2.azurestaticapps.net");
+        private static final Set<String> ALLOWED_ORIGINS = Set.of(
+                        "http://localhost:3000",
+                        "http://localhost:4200",
+                        "http://localhost:5173",
+                        "http://localhost:8100",
+                        "http://127.0.0.1:3000",
+                        "http://127.0.0.1:4200",
+                        "http://127.0.0.1:5173",
+                        "https://delightful-mud-0f191e10f.2.azurestaticapps.net");
 
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public WebFilter corsFilter() {
-        return (ServerWebExchange exchange, WebFilterChain chain) -> {
-            ServerHttpRequest request = exchange.getRequest();
-            String origin = request.getHeaders().getOrigin();
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        public WebFilter corsFilter() {
+                return (ServerWebExchange exchange, WebFilterChain chain) -> {
+                        ServerHttpRequest request = exchange.getRequest();
+                        String origin = request.getHeaders().getOrigin();
 
-            if (origin == null || !ALLOWED_ORIGINS.contains(origin)) {
-                // Not a CORS request, or origin not allowed → pass through
-                return chain.filter(exchange);
-            }
+                        if (origin == null || !ALLOWED_ORIGINS.contains(origin)) {
+                                // Not a CORS request, or origin not allowed → pass through
+                                return chain.filter(exchange);
+                        }
 
-            ServerHttpResponse response = exchange.getResponse();
+                        ServerHttpResponse response = exchange.getResponse();
 
-            // Set CORS response headers
-            response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-            response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+                        // Set CORS response headers
+                        response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                        response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+                        response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
 
-            // Handle preflight
-            if (request.getMethod() == HttpMethod.OPTIONS) {
-                response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
-                        "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD");
-                response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS,
-                        "Authorization, Content-Type, X-Requested-With, Accept, Origin");
-                response.setStatusCode(HttpStatus.OK);
-                return response.setComplete();
-            }
+                        // Handle preflight
+                        if (request.getMethod() == HttpMethod.OPTIONS) {
+                                response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
+                                                "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD");
+                                response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS,
+                                                "Authorization, Content-Type, X-Requested-With, Accept, Origin");
+                                response.setStatusCode(HttpStatus.OK);
+                                return response.setComplete();
+                        }
 
-            // Strip Origin so downstream CorsProcessors see a same-origin request
-            ServerHttpRequest mutatedRequest = request.mutate()
-                    .headers(h -> h.remove(HttpHeaders.ORIGIN))
-                    .build();
+                        // Strip Origin so downstream CorsProcessors see a same-origin request
+                        ServerHttpRequest mutatedRequest = request.mutate()
+                                        .headers(h -> h.remove(HttpHeaders.ORIGIN))
+                                        .build();
 
-            return chain.filter(exchange.mutate().request(mutatedRequest).build());
-        };
+                        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                };
+        }
+}
