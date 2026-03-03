@@ -31,6 +31,15 @@ public class GroupController {
                 .body(ApiResponse.success("Group created successfully", group));
     }
 
+    @GetMapping("/my-groups")
+    public ResponseEntity<ApiResponse<List<GroupResponse>>> getMyGroups(
+            @RequestHeader("X-User-Id") String userId) {
+
+        log.info("Received request to get groups for user (my-groups): {}", userId);
+        List<GroupResponse> groups = groupService.getUserGroups(userId);
+        return ResponseEntity.ok(ApiResponse.success(groups));
+    }
+
     @GetMapping("/{groupId}")
     public ResponseEntity<ApiResponse<GroupResponse>> getGroupById(
             @PathVariable Long groupId,

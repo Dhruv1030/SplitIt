@@ -68,6 +68,22 @@ public class SettlementController {
     }
 
     /**
+     * Get pending settlements for current user
+     * 
+     * GET /api/settlements/pending
+     */
+    @GetMapping("/pending")
+    public ResponseEntity<List<SettlementResponse>> getPendingSettlements(
+            @RequestHeader("X-User-Id") String currentUserId) {
+        log.info("Fetching pending settlements for user: {}", currentUserId);
+        List<SettlementResponse> all = settlementService.getUserSettlements(currentUserId);
+        List<SettlementResponse> pending = all.stream()
+                .filter(s -> s.getStatus() != null && s.getStatus().name().equals("PENDING"))
+                .toList();
+        return ResponseEntity.ok(pending);
+    }
+
+    /**
      * Get settlements for current user
      * 
      * GET /api/settlements/my-settlements
