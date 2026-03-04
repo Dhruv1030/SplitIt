@@ -115,16 +115,26 @@ jobs:
             echo "Waiting 30s for discovery-server to stabilize..."
             sleep 30
 
-      # Deploy api-gateway
+      # Deploy api-gateway with direct service URLs (bypass Eureka for routing)
       - name: Deploy api-gateway
         uses: azure/cli@v2
+        env:
+          BASE_DOMAIN: delightfulfield-e71e7e6d.eastus.azurecontainerapps.io
         with:
           inlineScript: |
             az containerapp update \
               --name api-gateway \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }} \
-              --min-replicas 1 --max-replicas 2
+              --min-replicas 1 --max-replicas 2 \
+              --set-env-vars \
+                "SERVICES_USER_URL=https://user-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_GROUP_URL=https://group-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_EXPENSE_URL=https://expense-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_SETTLEMENT_URL=https://settlement-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_PAYMENT_URL=https://payment-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_ANALYTICS_URL=https://analytics-service.${{ env.BASE_DOMAIN }}" \
+                "SERVICES_NOTIFICATION_URL=https://notification-service.${{ env.BASE_DOMAIN }}"
 
       # Deploy all backend services in parallel
       - name: Deploy backend services
