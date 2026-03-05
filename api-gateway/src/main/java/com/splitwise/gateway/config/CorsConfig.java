@@ -60,7 +60,7 @@ public class CorsConfig {
                                 response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
                                                 "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD");
                                 response.getHeaders().set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS,
-                                                "Authorization, Content-Type, X-Requested-With, Accept, Origin");
+                                                "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-User-Id");
                                 response.setStatusCode(HttpStatus.OK);
                                 return response.setComplete();
                         }
