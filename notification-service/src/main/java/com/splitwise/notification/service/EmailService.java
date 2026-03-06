@@ -141,6 +141,40 @@ public class EmailService {
     }
 
     /**
+     * Send friend request email
+     */
+    public EmailResponse sendFriendRequestEmail(FriendRequestEmailRequest request) {
+        try {
+            log.info("Sending friend request email to: {}", request.getReceiverEmail());
+
+            Context context = new Context();
+            context.setVariable("receiverName", request.getReceiverName());
+            context.setVariable("senderName", request.getSenderName());
+            context.setVariable("senderEmail", request.getSenderEmail());
+            context.setVariable("acceptUrl", request.getAcceptUrl());
+            context.setVariable("declineUrl", request.getDeclineUrl());
+
+            String htmlContent = templateEngine.process("friend-request", context);
+            String subject = String.format("%s wants to be your friend on SplitIt", request.getSenderName());
+
+            sendHtmlEmail(request.getReceiverEmail(), subject, htmlContent);
+
+            return EmailResponse.builder()
+                    .success(true)
+                    .message("Friend request email sent successfully")
+                    .sentAt(LocalDateTime.now())
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Failed to send friend request email: {}", e.getMessage(), e);
+            return EmailResponse.builder()
+                    .success(false)
+                    .message("Failed to send friend request email: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
      * Helper method to send HTML email
      */
     private void sendHtmlEmail(String to, String subject, String htmlContent) throws MessagingException {

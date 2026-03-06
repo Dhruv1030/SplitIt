@@ -150,4 +150,66 @@ public class UserController {
                         @Parameter(description = "Search query (name or email)", required = true) @RequestParam String query) {
                 return ResponseEntity.ok(userService.searchUsers(query));
         }
+
+        // ==================== Friend Request Endpoints ====================
+
+        @Operation(summary = "Send friend request", description = "Send a friend request to another user by email or ID")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "201", description = "Friend request sent successfully"),
+                        @ApiResponse(responseCode = "400", description = "Invalid request or already friends"),
+                        @ApiResponse(responseCode = "404", description = "User not found")
+        })
+        @PostMapping("/friend-requests")
+        public ResponseEntity<FriendRequestDTO> sendFriendRequest(
+                        @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+                        @Valid @RequestBody SendFriendRequestDTO request) {
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(userService.sendFriendRequest(userId, request));
+        }
+
+        @Operation(summary = "Get pending friend requests", description = "Get all pending incoming friend requests")
+        @GetMapping("/friend-requests/pending")
+        public ResponseEntity<List<FriendRequestDTO>> getPendingRequests(
+                        @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
+                return ResponseEntity.ok(userService.getPendingRequests(userId));
+        }
+
+        @Operation(summary = "Get sent friend requests", description = "Get all friend requests sent by current user")
+        @GetMapping("/friend-requests/sent")
+        public ResponseEntity<List<FriendRequestDTO>> getSentRequests(
+                        @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
+                return ResponseEntity.ok(userService.getSentRequests(userId));
+        }
+
+        @Operation(summary = "Accept friend request", description = "Accept a pending friend request")
+        @PutMapping("/friend-requests/{requestId}/accept")
+        public ResponseEntity<FriendRequestDTO> acceptFriendRequest(
+                        @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+                        @PathVariable String requestId) {
+                return ResponseEntity.ok(userService.acceptFriendRequest(requestId, userId));
+        }
+
+        @Operation(summary = "Decline friend request", description = "Decline a pending friend request")
+        @PutMapping("/friend-requests/{requestId}/decline")
+        public ResponseEntity<FriendRequestDTO> declineFriendRequest(
+                        @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+                        @PathVariable String requestId) {
+                return ResponseEntity.ok(userService.declineFriendRequest(requestId, userId));
+        }
+
+        // ==================== Token-based Accept/Decline (from email) ====================
+
+        @Operation(summary = "Accept friend request via email link", description = "Accept a friend request using the token from the email")
+        @GetMapping("/friend-requests/accept")
+        public ResponseEntity<String> acceptFriendRequestByToken(@RequestParam String token) {
+                userService.acceptFriendRequestByToken(token);
+                return ResponseEntity.ok("Friend request accepted successfully! You are now friends.");
+        }
+
+        @Operation(summary = "Decline friend request via email link", description = "Decline a friend request using the token from the email")
+        @GetMapping("/friend-requests/decline")
+        public ResponseEntity<String> declineFriendRequestByToken(@RequestParam String token) {
+                userService.declineFriendRequestByToken(token);
+                return ResponseEntity.ok("Friend request declined.");
+        }
 }

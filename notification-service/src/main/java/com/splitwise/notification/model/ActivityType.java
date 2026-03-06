@@ -18,5 +18,10 @@ public enum ActivityType {
 
     // Member activities
     USER_JOINED,
-    USER_LEFT
+    USER_LEFT,
+
+    // Friend request activities
+    FRIEND_REQUEST_SENT,
+    FRIEND_REQUEST_ACCEPTED,
+    FRIEND_REQUEST_DECLINED
 }

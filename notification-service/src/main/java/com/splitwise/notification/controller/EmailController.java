@@ -58,6 +58,19 @@ public class EmailController {
         }
     }
 
+    @Operation(summary = "Send friend request email", description = "Send a friend request notification email with accept/decline links")
+    @PostMapping("/friend-request")
+    public ResponseEntity<EmailResponse> sendFriendRequestEmail(@Valid @RequestBody FriendRequestEmailRequest request) {
+        log.info("Received friend request email for: {}", request.getReceiverEmail());
+        EmailResponse response = emailService.sendFriendRequestEmail(request);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     @Operation(summary = "Send test email", description = "Send a test email to verify SMTP configuration")
     @PostMapping("/test")
     public ResponseEntity<EmailResponse> sendTestEmail(@RequestParam String email) {

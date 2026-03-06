@@ -49,6 +49,15 @@ public class RouteConfig {
                                                 .path("/api/users/login")
                                                 .uri(userServiceUrl))
 
+                                // Public friend request accept/decline via email token
+                                .route("friend-request-accept", r -> r
+                                                .path("/api/users/friend-requests/accept")
+                                                .uri(userServiceUrl))
+
+                                .route("friend-request-decline", r -> r
+                                                .path("/api/users/friend-requests/decline")
+                                                .uri(userServiceUrl))
+
                                 // Protected routes - Authentication required
                                 .route("user-service-protected", r -> r
                                                 .path("/api/users/**")
