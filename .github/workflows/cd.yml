@@ -111,7 +111,7 @@ jobs:
               --name discovery-server \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.ACR_LOGIN_SERVER }}/discovery-server:${{ github.sha }} \
-              --min-replicas 1 --max-replicas 2
+              --min-replicas 1 --max-replicas 1
             echo "Waiting 30s for discovery-server to stabilize..."
             sleep 30
 
@@ -126,7 +126,7 @@ jobs:
               --name api-gateway \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }} \
-              --min-replicas 1 --max-replicas 2 \
+              --min-replicas 1 --max-replicas 1 \
               --set-env-vars \
                 "SERVICES_USER_URL=https://user-service.${{ env.BASE_DOMAIN }}" \
                 "SERVICES_GROUP_URL=https://group-service.${{ env.BASE_DOMAIN }}" \
@@ -136,7 +136,7 @@ jobs:
                 "SERVICES_ANALYTICS_URL=https://analytics-service.${{ env.BASE_DOMAIN }}" \
                 "SERVICES_NOTIFICATION_URL=https://notification-service.${{ env.BASE_DOMAIN }}"
 
-      # Deploy all backend services in parallel
+      # Deploy all backend services in parallel (scale-to-zero to reduce idle costs)
       - name: Deploy backend services
         uses: azure/cli@v2
         with:
@@ -147,7 +147,7 @@ jobs:
                 --name $svc \
                 --resource-group ${{ env.RESOURCE_GROUP }} \
                 --image ${{ env.ACR_LOGIN_SERVER }}/${svc}:${{ github.sha }} \
-                --min-replicas 1 --max-replicas 2 &
+                --min-replicas 0 --max-replicas 2 &
             done
             echo "Waiting for all deployments to complete..."
             wait
