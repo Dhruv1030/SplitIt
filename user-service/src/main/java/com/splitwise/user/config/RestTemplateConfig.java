@@ -1,4 +1,4 @@
-package com.splitwise.notification.config;
+package com.splitwise.user.config;
 
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;

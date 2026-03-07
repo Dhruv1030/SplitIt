@@ -11,8 +11,8 @@ spring:
     name: notification-service
   datasource:
     url: jdbc:postgresql://localhost:5432/notification_db
-    username: admin
-    password: REDACTED_PASSWORD
+    username: ${POSTGRES_USER:admin}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 3
@@ -41,6 +41,10 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+settlement:
+  service:
+    url: ${SETTLEMENT_SERVICE_URL:http://localhost:8084}
+
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
 
@@ -65,8 +69,11 @@ spring:
       on-profile: docker
   datasource:
     url: jdbc:postgresql://postgres:5432/notification_db
-    username: admin
-    password: REDACTED_PASSWORD
+
+settlement:
+  service:
+    url: ${SETTLEMENT_SERVICE_URL:http://settlement-service:8084}
+
 eureka:
   client:
     service-url:

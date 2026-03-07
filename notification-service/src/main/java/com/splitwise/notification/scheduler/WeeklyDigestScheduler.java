@@ -2,8 +2,8 @@ package com.splitwise.notification.scheduler;
 
 import com.splitwise.notification.dto.PaymentReminderRequest;
 import com.splitwise.notification.service.EmailService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -17,12 +17,20 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class WeeklyDigestScheduler {
 
     private final EmailService emailService;
     private final RestTemplate restTemplate;
+    private final String settlementServiceUrl;
+
+    public WeeklyDigestScheduler(EmailService emailService,
+                                  RestTemplate restTemplate,
+                                  @Value("${settlement.service.url}") String settlementServiceUrl) {
+        this.emailService = emailService;
+        this.restTemplate = restTemplate;
+        this.settlementServiceUrl = settlementServiceUrl;
+    }
 
     /**
      * Weekly payment reminder digest
@@ -35,11 +43,8 @@ public class WeeklyDigestScheduler {
         log.info("Starting weekly payment reminder digest at {}", LocalDateTime.now());
 
         try {
-            // Fetch outstanding settlements from settlement-service
-            String settlementServiceUrl = "http://settlement-service:8084/api/settlements/outstanding";
-
             ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                    settlementServiceUrl,
+                    settlementServiceUrl + "/api/settlements/outstanding",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<List<Map<String, Object>>>() {

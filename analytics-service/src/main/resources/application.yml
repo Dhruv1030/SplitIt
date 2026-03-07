@@ -13,7 +13,7 @@ management:
       show-details: always
   data:
     mongodb:
-      uri: mongodb://admin:REDACTED_PASSWORD@localhost:27017/analyticsdb?authSource=admin
+      uri: ${MONGODB_URI:mongodb://localhost:27017/analyticsdb}
   kafka:
     bootstrap-servers: localhost:9093
 eureka:
@@ -27,7 +27,7 @@ spring:
       on-profile: docker
   data:
     mongodb:
-      uri: mongodb://admin:REDACTED_PASSWORD@mongodb:27017/analyticsdb?authSource=admin
+      uri: ${MONGODB_URI:mongodb://mongodb:27017/analyticsdb}
   kafka:
     bootstrap-servers: kafka:29092
 eureka:

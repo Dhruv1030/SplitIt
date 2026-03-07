@@ -6,7 +6,7 @@ spring:
     name: user-service
   data:
     mongodb:
-      uri: mongodb://admin:REDACTED_PASSWORD@localhost:27017/userdb?authSource=admin
+      uri: ${MONGODB_URI:mongodb://localhost:27017/userdb}
   kafka:
     bootstrap-servers: localhost:9093
     producer:
@@ -48,7 +48,7 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
 
 jwt:
-  secret: ${JWT_SECRET:REDACTED_JWT_SECRET}
+  secret: ${JWT_SECRET}
   expiration-ms: 3600000 # 1 hour
 
 # Swagger/OpenAPI Configuration
@@ -70,7 +70,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://admin:REDACTED_PASSWORD@mongodb:27017/userdb?authSource=admin
+      uri: ${MONGODB_URI:mongodb://mongodb:27017/userdb}
 
   kafka:
     bootstrap-servers: kafka:29092
