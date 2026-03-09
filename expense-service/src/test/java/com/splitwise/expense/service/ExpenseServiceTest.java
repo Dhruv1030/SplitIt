@@ -1,6 +1,7 @@
 package com.splitwise.expense.service;
 
 import com.splitwise.expense.client.ActivityClient;
+import com.splitwise.expense.event.ExpenseEventProducer;
 import com.splitwise.expense.dto.*;
 import com.splitwise.expense.exception.ResourceNotFoundException;
 import com.splitwise.expense.exception.UnauthorizedException;
@@ -38,6 +39,9 @@ class ExpenseServiceTest {
 
     @Mock
     private ActivityClient activityClient;
+
+    @Mock
+    private ExpenseEventProducer expenseEventProducer;
 
     @InjectMocks
     private ExpenseService expenseService;
