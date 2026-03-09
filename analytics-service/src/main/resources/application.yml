@@ -16,6 +16,13 @@ management:
       uri: ${MONGODB_URI:mongodb://localhost:27017/analyticsdb}
   kafka:
     bootstrap-servers: localhost:9093
+    consumer:
+      group-id: analytics-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 eureka:
   client:
     service-url:

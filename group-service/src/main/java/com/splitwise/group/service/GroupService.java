@@ -5,6 +5,8 @@ import com.splitwise.group.client.ActivityRequest;
 import com.splitwise.group.client.EmailNotificationClient;
 import com.splitwise.group.client.GroupInvitationEmailRequest;
 import com.splitwise.group.client.UserClient;
+import com.splitwise.group.event.GroupEvent;
+import com.splitwise.group.event.GroupEventProducer;
 import com.splitwise.group.dto.*;
 import com.splitwise.group.exception.BadRequestException;
 import com.splitwise.group.exception.ResourceNotFoundException;
@@ -33,6 +35,7 @@ public class GroupService {
     private final UserClient userClient;
     private final ActivityClient activityClient;
     private final EmailNotificationClient emailNotificationClient;
+    private final GroupEventProducer groupEventProducer;
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request, String userId) {
@@ -80,6 +83,15 @@ public class GroupService {
 
         // Log activity
         logGroupCreatedActivity(savedGroup.getId(), userId, savedGroup.getName());
+
+        // Publish Kafka event
+        groupEventProducer.publishGroupEvent(GroupEvent.builder()
+                .eventType("GROUP_CREATED")
+                .groupId(savedGroup.getId())
+                .groupName(savedGroup.getName())
+                .userId(userId)
+                .timestamp(savedGroup.getCreatedAt())
+                .build());
 
         return mapToGroupResponse(savedGroup);
     }
@@ -209,6 +221,16 @@ public class GroupService {
 
         // Log activity
         logMemberAddedActivity(groupId, requesterId, request.getUserId(), group.getName());
+
+        // Publish Kafka event
+        groupEventProducer.publishGroupEvent(GroupEvent.builder()
+                .eventType("MEMBER_ADDED")
+                .groupId(groupId)
+                .groupName(group.getName())
+                .userId(requesterId)
+                .targetUserId(request.getUserId())
+                .timestamp(LocalDateTime.now())
+                .build());
 
         // Send invitation email
         sendGroupInvitationEmail(request.getUserId(), requesterId, updatedGroup);

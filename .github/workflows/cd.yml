@@ -177,21 +177,36 @@ jobs:
 
       - name: Health check - API Gateway
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/actuator/health || echo "000")
-          echo "API Gateway health: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::warning::API Gateway health check returned $STATUS"
-          fi
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.GATEWAY_URL }}/actuator/health || echo "000")
+            echo "Attempt $i - API Gateway health: $STATUS"
+            [ "$STATUS" = "200" ] && exit 0
+            [ "$i" -lt 3 ] && sleep 15
+          done
+          echo "::error::API Gateway health check failed after 3 attempts (last status: $STATUS)"
+          exit 1
 
       - name: Health check - User Service (via Gateway)
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/api/users/health || echo "000")
-          echo "User Service health: $STATUS"
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.GATEWAY_URL }}/api/users/health || echo "000")
+            echo "Attempt $i - User Service health: $STATUS"
+            [ "$STATUS" = "200" ] && exit 0
+            [ "$i" -lt 3 ] && sleep 15
+          done
+          echo "::error::User Service health check failed after 3 attempts (last status: $STATUS)"
+          exit 1
 
       - name: Health check - Expense Service (via Gateway)
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.GATEWAY_URL }}/api/expenses/health || echo "000")
-          echo "Expense Service health: $STATUS"
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.GATEWAY_URL }}/api/expenses/health || echo "000")
+            echo "Attempt $i - Expense Service health: $STATUS"
+            [ "$STATUS" = "200" ] && exit 0
+            [ "$i" -lt 3 ] && sleep 15
+          done
+          echo "::error::Expense Service health check failed after 3 attempts (last status: $STATUS)"
+          exit 1
 
       - name: Smoke test summary
-        run: echo "Smoke tests completed. Check warnings above for any issues."
+        run: echo "All smoke tests passed successfully."

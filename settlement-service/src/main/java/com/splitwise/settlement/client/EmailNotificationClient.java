@@ -1,5 +1,6 @@
 package com.splitwise.settlement.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,34 +17,27 @@ public class EmailNotificationClient {
     /**
      * Send payment received notification email
      */
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "sendPaymentReceivedEmailFallback")
     public void sendPaymentReceivedEmail(PaymentReceivedEmailRequest request) {
-        try {
-            log.info("Sending payment received email to: {}", request.getPayeeEmail());
-
-            String url = NOTIFICATION_SERVICE_URL + "/payment-received";
-            restTemplate.postForObject(url, request, Object.class);
-
-            log.info("Payment received email sent successfully");
-        } catch (Exception e) {
-            log.error("Failed to send payment received email: {}", e.getMessage(), e);
-            // Don't throw exception - email failure shouldn't break the flow
-        }
+        log.info("Sending payment received email to: {}", request.getPayeeEmail());
+        String url = NOTIFICATION_SERVICE_URL + "/payment-received";
+        restTemplate.postForObject(url, request, Object.class);
+        log.info("Payment received email sent successfully");
     }
 
-    /**
-     * Send payment reminder email
-     */
+    public void sendPaymentReceivedEmailFallback(PaymentReceivedEmailRequest request, Throwable t) {
+        log.warn("Circuit breaker fallback for sendPaymentReceivedEmail: {}", t.getMessage());
+    }
+
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "sendPaymentReminderEmailFallback")
     public void sendPaymentReminderEmail(PaymentReminderEmailRequest request) {
-        try {
-            log.info("Sending payment reminder email to: {}", request.getDebtorEmail());
+        log.info("Sending payment reminder email to: {}", request.getDebtorEmail());
+        String url = NOTIFICATION_SERVICE_URL + "/payment-reminder";
+        restTemplate.postForObject(url, request, Object.class);
+        log.info("Payment reminder email sent successfully");
+    }
 
-            String url = NOTIFICATION_SERVICE_URL + "/payment-reminder";
-            restTemplate.postForObject(url, request, Object.class);
-
-            log.info("Payment reminder email sent successfully");
-        } catch (Exception e) {
-            log.error("Failed to send payment reminder email: {}", e.getMessage(), e);
-            // Don't throw exception - email failure shouldn't break the flow
-        }
+    public void sendPaymentReminderEmailFallback(PaymentReminderEmailRequest request, Throwable t) {
+        log.warn("Circuit breaker fallback for sendPaymentReminderEmail: {}", t.getMessage());
     }
 }

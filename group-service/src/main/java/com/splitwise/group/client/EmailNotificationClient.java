@@ -1,5 +1,6 @@
 package com.splitwise.group.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -19,24 +20,24 @@ public class EmailNotificationClient {
     /**
      * Send group invitation email
      */
+    @CircuitBreaker(name = "notificationService", fallbackMethod = "sendGroupInvitationEmailFallback")
     public void sendGroupInvitationEmail(GroupInvitationEmailRequest request) {
-        try {
-            log.info("Sending group invitation email to: {}", request.getInviteeEmail());
+        log.info("Sending group invitation email to: {}", request.getInviteeEmail());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<GroupInvitationEmailRequest> entity = new HttpEntity<>(request, headers);
+        HttpEntity<GroupInvitationEmailRequest> entity = new HttpEntity<>(request, headers);
 
-            restTemplate.postForEntity(
-                    NOTIFICATION_SERVICE_URL + "/group-invitation",
-                    entity,
-                    String.class);
+        restTemplate.postForEntity(
+                NOTIFICATION_SERVICE_URL + "/group-invitation",
+                entity,
+                String.class);
 
-            log.info("Group invitation email sent successfully to: {}", request.getInviteeEmail());
-        } catch (Exception e) {
-            log.error("Failed to send group invitation email: {}", e.getMessage());
-            // Don't throw exception - email is not critical for member addition
-        }
+        log.info("Group invitation email sent successfully to: {}", request.getInviteeEmail());
+    }
+
+    public void sendGroupInvitationEmailFallback(GroupInvitationEmailRequest request, Throwable t) {
+        log.warn("Circuit breaker fallback for sendGroupInvitationEmail: {}", t.getMessage());
     }
 }

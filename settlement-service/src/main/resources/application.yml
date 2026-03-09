@@ -8,11 +8,25 @@ spring:
     username: ${POSTGRES_USER:admin}
     password: ${POSTGRES_PASSWORD}
     hikari:
-      maximum-pool-size: 3
-      minimum-idle: 1
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    table: flyway_schema_history_settlement
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: localhost:9093
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 activity:
   service:
     url: http://localhost:8085
@@ -21,6 +35,24 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      expenseService:
+        base-config: default
+      userService:
+        base-config: default
+      notificationService:
+        base-config: default
 
 # Swagger/OpenAPI Configuration
 springdoc:
@@ -40,6 +72,8 @@ spring:
       on-profile: docker
   datasource:
     url: jdbc:postgresql://postgres:5432/splitwise
+  kafka:
+    bootstrap-servers: kafka:29092
 activity:
   service:
     url: http://notification-service:8085

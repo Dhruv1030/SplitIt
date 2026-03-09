@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to version control
+
+postgres_admin_username = "admin"
+postgres_admin_password = "your-secure-password"
+jwt_secret              = "your-jwt-secret"
+mail_username           = "your-email@gmail.com"
+mail_password           = "your-app-password"

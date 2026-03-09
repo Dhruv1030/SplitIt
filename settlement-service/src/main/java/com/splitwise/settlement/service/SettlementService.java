@@ -5,6 +5,8 @@ import com.splitwise.settlement.client.ActivityRequest;
 import com.splitwise.settlement.client.EmailNotificationClient;
 import com.splitwise.settlement.client.PaymentReceivedEmailRequest;
 import com.splitwise.settlement.client.PaymentReminderEmailRequest;
+import com.splitwise.settlement.event.SettlementEvent;
+import com.splitwise.settlement.event.SettlementEventProducer;
 import com.splitwise.settlement.dto.*;
 import com.splitwise.settlement.entity.Settlement;
 import com.splitwise.settlement.entity.SettlementStatus;
@@ -29,6 +31,7 @@ public class SettlementService {
     private final WebClient.Builder webClientBuilder;
     private final ActivityClient activityClient;
     private final EmailNotificationClient emailNotificationClient;
+    private final SettlementEventProducer settlementEventProducer;
 
     /**
      * Calculate simplified settlements for a group using debt simplification
@@ -251,6 +254,17 @@ public class SettlementService {
         // Log activity
         logPaymentRecordedActivity(settlement);
 
+        // Publish Kafka event
+        settlementEventProducer.publishSettlementEvent(SettlementEvent.builder()
+                .eventType("SETTLEMENT_CREATED")
+                .settlementId(settlement.getId())
+                .payerUserId(settlement.getPayerId())
+                .payeeUserId(settlement.getPayeeId())
+                .amount(settlement.getAmount())
+                .groupId(settlement.getGroupId())
+                .timestamp(LocalDateTime.now())
+                .build());
+
         // Send payment received email notification
         sendPaymentReceivedEmail(settlement);
 
@@ -304,6 +318,17 @@ public class SettlementService {
 
         // Log activity
         logSettlementCompletedActivity(settlement);
+
+        // Publish Kafka event
+        settlementEventProducer.publishSettlementEvent(SettlementEvent.builder()
+                .eventType("SETTLEMENT_COMPLETED")
+                .settlementId(settlement.getId())
+                .payerUserId(settlement.getPayerId())
+                .payeeUserId(settlement.getPayeeId())
+                .amount(settlement.getAmount())
+                .groupId(settlement.getGroupId())
+                .timestamp(LocalDateTime.now())
+                .build());
 
         return toResponse(settlement);
     }

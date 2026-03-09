@@ -40,6 +40,97 @@ public class RouteConfig {
         @Bean
         public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
                 return builder.routes()
+                                // =============================================
+                                // API v1 routes (versioned) - rewrite /api/v1/ to /api/
+                                // =============================================
+
+                                // v1 Public routes
+                                .route("v1-user-register", r -> r
+                                                .path("/api/v1/users/register")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-user-login", r -> r
+                                                .path("/api/v1/users/login")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-user-refresh-token", r -> r
+                                                .path("/api/v1/users/refresh-token")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-friend-request-accept", r -> r
+                                                .path("/api/v1/users/friend-requests/accept")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-friend-request-decline", r -> r
+                                                .path("/api/v1/users/friend-requests/decline")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                // v1 Protected routes
+                                .route("v1-user-service-protected", r -> r
+                                                .path("/api/v1/users/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-group-service-protected", r -> r
+                                                .path("/api/v1/groups", "/api/v1/groups/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(groupServiceUrl))
+
+                                .route("v1-expense-service-protected", r -> r
+                                                .path("/api/v1/expenses", "/api/v1/expenses/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(expenseServiceUrl))
+
+                                .route("v1-settlement-service-protected", r -> r
+                                                .path("/api/v1/settlements", "/api/v1/settlements/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(settlementServiceUrl))
+
+                                .route("v1-payment-service-protected", r -> r
+                                                .path("/api/v1/payments", "/api/v1/payments/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(paymentServiceUrl))
+
+                                .route("v1-analytics-service-protected", r -> r
+                                                .path("/api/v1/analytics", "/api/v1/analytics/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(analyticsServiceUrl))
+
+                                .route("v1-notification-service-protected", r -> r
+                                                .path("/api/v1/notifications", "/api/v1/notifications/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(notificationServiceUrl))
+
+                                .route("v1-activity-service-protected", r -> r
+                                                .path("/api/v1/activities", "/api/v1/activities/**")
+                                                .filters(f -> f
+                                                                .filter(authenticationFilter.apply(new AuthenticationFilter.Config()))
+                                                                .rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(notificationServiceUrl))
+
+                                // =============================================
+                                // Original routes (backward compatible)
+                                // =============================================
+
                                 // Public routes - No authentication required
                                 .route("user-register", r -> r
                                                 .path("/api/users/register")
@@ -56,6 +147,10 @@ public class RouteConfig {
 
                                 .route("friend-request-decline", r -> r
                                                 .path("/api/users/friend-requests/decline")
+                                                .uri(userServiceUrl))
+
+                                .route("user-refresh-token", r -> r
+                                                .path("/api/users/refresh-token")
                                                 .uri(userServiceUrl))
 
                                 // Protected routes - Authentication required

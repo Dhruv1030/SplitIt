@@ -1,5 +1,6 @@
 package com.splitwise.group.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,16 +20,16 @@ public class UserClient {
     @Value("${user.service.url:http://USER-SERVICE}")
     private String userServiceUrl;
 
+    @CircuitBreaker(name = "userService", fallbackMethod = "getUserByIdFallback")
     public UserDTO getUserById(String userId) {
-        try {
-            log.debug("Fetching user details for userId: {}", userId);
-            String url = userServiceUrl + "/api/users/" + userId;
-            return restTemplate.getForObject(url, UserDTO.class);
-        } catch (Exception e) {
-            log.warn("Failed to fetch user details for userId: {}. Error: {}", userId, e.getMessage());
-            // Return null if user service is unavailable or user not found
-            return null;
-        }
+        log.debug("Fetching user details for userId: {}", userId);
+        String url = userServiceUrl + "/api/users/" + userId;
+        return restTemplate.getForObject(url, UserDTO.class);
+    }
+
+    public UserDTO getUserByIdFallback(String userId, Throwable t) {
+        log.warn("Circuit breaker fallback for getUserById({}): {}", userId, t.getMessage());
+        return null;
     }
 
     @Data

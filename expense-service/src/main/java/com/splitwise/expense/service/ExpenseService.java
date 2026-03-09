@@ -3,6 +3,8 @@ package com.splitwise.expense.service;
 import com.splitwise.expense.client.ActivityClient;
 import com.splitwise.expense.client.ActivityRequest;
 import com.splitwise.expense.dto.*;
+import com.splitwise.expense.event.ExpenseEvent;
+import com.splitwise.expense.event.ExpenseEventProducer;
 import com.splitwise.expense.exception.BadRequestException;
 import com.splitwise.expense.exception.ResourceNotFoundException;
 import com.splitwise.expense.exception.UnauthorizedException;
@@ -31,6 +33,7 @@ public class ExpenseService {
     private final ExpenseSplitRepository expenseSplitRepository;
     private final SplitCalculatorService splitCalculatorService;
     private final ActivityClient activityClient;
+    private final ExpenseEventProducer expenseEventProducer;
 
     /**
      * Create a new expense with calculated splits
@@ -71,6 +74,18 @@ public class ExpenseService {
 
         // Log activity
         logExpenseActivity("EXPENSE_ADDED", savedExpense);
+
+        // Publish Kafka event
+        expenseEventProducer.publishExpenseEvent(ExpenseEvent.builder()
+                .eventType("EXPENSE_CREATED")
+                .expenseId(savedExpense.getId())
+                .description(savedExpense.getDescription())
+                .amount(savedExpense.getAmount())
+                .paidByUserId(savedExpense.getPaidBy())
+                .groupId(savedExpense.getGroupId())
+                .category(savedExpense.getCategory())
+                .timestamp(savedExpense.getCreatedAt())
+                .build());
 
         return convertToResponse(savedExpense);
     }
@@ -178,6 +193,18 @@ public class ExpenseService {
         expense.setIsActive(false);
         expense.setUpdatedAt(LocalDateTime.now());
         expenseRepository.save(expense);
+
+        // Publish Kafka event
+        expenseEventProducer.publishExpenseEvent(ExpenseEvent.builder()
+                .eventType("EXPENSE_DELETED")
+                .expenseId(expense.getId())
+                .description(expense.getDescription())
+                .amount(expense.getAmount())
+                .paidByUserId(expense.getPaidBy())
+                .groupId(expense.getGroupId())
+                .category(expense.getCategory())
+                .timestamp(LocalDateTime.now())
+                .build());
 
         log.info("Expense soft-deleted successfully: {}", expenseId);
     }
