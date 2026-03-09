@@ -7,6 +7,7 @@ import com.splitwise.group.dto.UpdateGroupRequest;
 import com.splitwise.group.client.ActivityClient;
 import com.splitwise.group.client.EmailNotificationClient;
 import com.splitwise.group.client.UserClient;
+import com.splitwise.group.event.GroupEventProducer;
 import com.splitwise.group.exception.BadRequestException;
 import com.splitwise.group.exception.ResourceNotFoundException;
 import com.splitwise.group.exception.UnauthorizedException;
@@ -49,6 +50,9 @@ class GroupServiceTest {
 
     @Mock
     private EmailNotificationClient emailNotificationClient;
+
+    @Mock
+    private GroupEventProducer groupEventProducer;
 
     @InjectMocks
     private GroupService groupService;
