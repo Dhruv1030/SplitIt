@@ -70,6 +70,17 @@ public class RouteConfig {
                                                 .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
                                                 .uri(userServiceUrl))
 
+                                // v1 Health check routes (public, must be before protected wildcards)
+                                .route("v1-user-health", r -> r
+                                                .path("/api/v1/users/health")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(userServiceUrl))
+
+                                .route("v1-expense-health", r -> r
+                                                .path("/api/v1/expenses/health")
+                                                .filters(f -> f.rewritePath("/api/v1/(?<segment>.*)", "/api/${segment}"))
+                                                .uri(expenseServiceUrl))
+
                                 // v1 Protected routes
                                 .route("v1-user-service-protected", r -> r
                                                 .path("/api/v1/users/**")
@@ -152,6 +163,15 @@ public class RouteConfig {
                                 .route("user-refresh-token", r -> r
                                                 .path("/api/users/refresh-token")
                                                 .uri(userServiceUrl))
+
+                                // Health check routes (public, must be before protected wildcards)
+                                .route("user-health", r -> r
+                                                .path("/api/users/health")
+                                                .uri(userServiceUrl))
+
+                                .route("expense-health", r -> r
+                                                .path("/api/expenses/health")
+                                                .uri(expenseServiceUrl))
 
                                 // Protected routes - Authentication required
                                 .route("user-service-protected", r -> r
