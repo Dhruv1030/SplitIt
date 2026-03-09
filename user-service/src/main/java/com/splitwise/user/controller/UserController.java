@@ -212,4 +212,9 @@ public class UserController {
                 userService.declineFriendRequestByToken(token);
                 return ResponseEntity.ok("Friend request declined.");
         }
+
+        @GetMapping("/health")
+        public ResponseEntity<String> health() {
+                return ResponseEntity.ok("OK");
+        }
 }
