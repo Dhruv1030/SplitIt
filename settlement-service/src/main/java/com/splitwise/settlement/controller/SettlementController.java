@@ -154,6 +154,45 @@ public class SettlementController {
         return ResponseEntity.ok(outstandingSettlements);
     }
 
+    // ==================== Friend Settlement Endpoints ====================
+
+    /**
+     * Get settlement suggestion between current user and a specific friend.
+     * Aggregates ALL debts (group + friend expenses) into a single net balance.
+     *
+     * GET /api/settlements/friend/{friendId}/suggestion
+     */
+    @GetMapping("/friend/{friendId}/suggestion")
+    public ResponseEntity<SettlementSuggestion> getFriendSettlementSuggestion(
+            @PathVariable String friendId,
+            @RequestHeader("X-User-Id") String currentUserId) {
+
+        log.info("Fetching settlement suggestion between {} and {}", currentUserId, friendId);
+        SettlementSuggestion suggestion = settlementService.calculateFriendSettlement(currentUserId, friendId);
+
+        if (suggestion == null) {
+            return ResponseEntity.ok(null); // All settled up
+        }
+
+        return ResponseEntity.ok(suggestion);
+    }
+
+    /**
+     * Get all settlement history between current user and a specific friend.
+     *
+     * GET /api/settlements/friend/{friendId}
+     */
+    @GetMapping("/friend/{friendId}")
+    public ResponseEntity<List<SettlementResponse>> getFriendSettlements(
+            @PathVariable String friendId,
+            @RequestHeader("X-User-Id") String currentUserId) {
+
+        log.info("Fetching settlements between {} and {}", currentUserId, friendId);
+        List<SettlementResponse> settlements = settlementService.getFriendSettlements(currentUserId, friendId);
+
+        return ResponseEntity.ok(settlements);
+    }
+
     /**
      * Health check endpoint
      */

@@ -21,8 +21,7 @@ public class Settlement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long groupId;
+    private Long groupId; // null for direct friend settlements
 
     @Column(nullable = false)
     private String payerId; // User who pays

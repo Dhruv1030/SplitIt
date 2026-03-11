@@ -28,11 +28,12 @@ public class CreateExpenseRequest {
 
     private String currency;
 
-    @NotNull(message = "Group ID is required")
-    private Long groupId;
+    private Long groupId; // Required for GROUP expenses, null for FRIEND expenses
 
     @NotBlank(message = "Paid by user ID is required")
     private String paidBy;
+
+    private String friendUserId; // Required for FRIEND expenses
 
     private String category;
 

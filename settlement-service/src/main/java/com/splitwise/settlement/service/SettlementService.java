@@ -58,6 +58,85 @@ public class SettlementService {
     }
 
     /**
+     * Calculate settlement suggestion between current user and a friend.
+     * Aggregates ALL debts (group + friend expenses) into a single net balance.
+     */
+    public SettlementSuggestion calculateFriendSettlement(String currentUserId, String friendId) {
+        log.info("Calculating settlement between {} and {}", currentUserId, friendId);
+
+        BigDecimal netBalance = fetchFriendNetBalance(currentUserId, friendId);
+
+        if (netBalance == null || netBalance.compareTo(BigDecimal.ZERO) == 0) {
+            return null; // All settled
+        }
+
+        // Fetch user names
+        Map<String, String> userNames = fetchUserNames(Set.of(currentUserId, friendId));
+
+        SettlementSuggestion suggestion;
+        if (netBalance.compareTo(BigDecimal.ZERO) > 0) {
+            // friendId owes currentUserId
+            suggestion = SettlementSuggestion.builder()
+                    .payerId(friendId)
+                    .payerName(userNames.getOrDefault(friendId, "User"))
+                    .payeeId(currentUserId)
+                    .payeeName(userNames.getOrDefault(currentUserId, "User"))
+                    .amount(netBalance.abs().setScale(2, RoundingMode.HALF_UP))
+                    .currency("USD")
+                    .build();
+        } else {
+            // currentUserId owes friendId
+            suggestion = SettlementSuggestion.builder()
+                    .payerId(currentUserId)
+                    .payerName(userNames.getOrDefault(currentUserId, "User"))
+                    .payeeId(friendId)
+                    .payeeName(userNames.getOrDefault(friendId, "User"))
+                    .amount(netBalance.abs().setScale(2, RoundingMode.HALF_UP))
+                    .currency("USD")
+                    .build();
+        }
+
+        return suggestion;
+    }
+
+    /**
+     * Get all settlements between current user and a friend
+     */
+    public List<SettlementResponse> getFriendSettlements(String currentUserId, String friendId) {
+        List<Settlement> settlements = settlementRepository.findBetweenUsers(currentUserId, friendId);
+        return settlements.stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Fetch net balance between two users from Expense Service.
+     * Positive = friendId owes userId; Negative = userId owes friendId.
+     */
+    private BigDecimal fetchFriendNetBalance(String userId, String friendId) {
+        try {
+            String url = "http://expense-service/api/expenses/friend/" + friendId + "/balance";
+
+            Object rawBalance = webClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .header("X-User-Id", userId)
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .block();
+
+            if (rawBalance == null) {
+                return BigDecimal.ZERO;
+            }
+
+            return new BigDecimal(rawBalance.toString());
+        } catch (Exception e) {
+            log.error("Error fetching friend balance from expense service: {}", e.getMessage());
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
      * Debt Simplification Algorithm (Greedy Approach)
      * 
      * Algorithm:
@@ -416,8 +495,10 @@ public class SettlementService {
                 return;
             }
 
-            // Fetch group name
-            String groupName = fetchGroupName(settlement.getGroupId());
+            // Fetch group name (handle null groupId for friend settlements)
+            String groupName = settlement.getGroupId() != null
+                    ? fetchGroupName(settlement.getGroupId())
+                    : "Direct Settlement";
 
             PaymentReceivedEmailRequest emailRequest = PaymentReceivedEmailRequest.builder()
                     .payeeEmail(payeeEmail)
@@ -566,8 +647,10 @@ public class SettlementService {
                 // Fetch creditor (payee) details
                 String creditorName = fetchUserName(settlement.getPayeeId());
 
-                // Fetch group name
-                String groupName = fetchGroupName(settlement.getGroupId());
+                // Fetch group name (handle null groupId for friend settlements)
+                String groupName = settlement.getGroupId() != null
+                        ? fetchGroupName(settlement.getGroupId())
+                        : "Direct Settlement";
 
                 // Build settlement data map
                 settlementData.put("id", settlement.getId());

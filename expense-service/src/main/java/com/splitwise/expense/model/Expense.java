@@ -33,11 +33,17 @@ public class Expense {
     @Builder.Default
     private String currency = "USD";
 
-    @Column(nullable = false)
-    private Long groupId;
+    private Long groupId; // null for FRIEND expenses
 
     @Column(nullable = false)
     private String paidBy; // User ID who paid
+
+    private String friendUserId; // The other user in a FRIEND expense
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private ExpenseType expenseType = ExpenseType.GROUP;
 
     @Column
     private String createdBy; // User ID who recorded this expense

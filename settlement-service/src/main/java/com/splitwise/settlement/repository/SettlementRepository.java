@@ -51,4 +51,13 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
             @Param("payerId") String payerId,
             @Param("payeeId") String payeeId,
             @Param("status") SettlementStatus status);
+
+    /**
+     * Find all settlements between two specific users (regardless of group)
+     */
+    @Query("SELECT s FROM Settlement s WHERE " +
+            "((s.payerId = :userId1 AND s.payeeId = :userId2) " +
+            "OR (s.payerId = :userId2 AND s.payeeId = :userId1)) " +
+            "ORDER BY s.createdAt DESC")
+    List<Settlement> findBetweenUsers(@Param("userId1") String userId1, @Param("userId2") String userId2);
 }

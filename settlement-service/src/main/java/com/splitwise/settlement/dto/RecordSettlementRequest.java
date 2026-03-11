@@ -19,8 +19,7 @@ import java.math.BigDecimal;
 @Builder
 public class RecordSettlementRequest {
 
-    @NotNull(message = "Group ID is required")
-    private Long groupId;
+    private Long groupId; // Optional: null for direct friend settlements
 
     @NotBlank(message = "Payer ID is required")
     private String payerId;

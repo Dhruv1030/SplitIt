@@ -1,5 +1,6 @@
 package com.splitwise.expense.dto;
 
+import com.splitwise.expense.model.ExpenseType;
 import com.splitwise.expense.model.SplitType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,8 @@ public class ExpenseResponse {
     private BigDecimal amount;
     private String currency;
     private Long groupId;
+    private String friendUserId;
+    private ExpenseType expenseType;
     private String paidBy;
     private String createdBy;
     private String category;

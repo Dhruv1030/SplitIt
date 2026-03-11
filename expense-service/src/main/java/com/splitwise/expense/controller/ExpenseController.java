@@ -182,6 +182,38 @@ public class ExpenseController {
         return ResponseEntity.ok(balances);
     }
 
+    // ==================== Friend Expense Endpoints ====================
+
+    /**
+     * Get all direct (non-group) expenses between current user and a friend
+     */
+    @GetMapping("/friend/{friendId}")
+    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getFriendExpenses(
+            @PathVariable String friendId,
+            @RequestHeader("X-User-Id") String userId) {
+
+        log.info("Fetching friend expenses between {} and {}", userId, friendId);
+        List<ExpenseResponse> expenses = expenseService.getFriendExpenses(userId, friendId);
+
+        return ResponseEntity.ok(ApiResponse.success(expenses));
+    }
+
+    /**
+     * Get net balance between current user and a friend across ALL expenses (group + friend).
+     * Positive = friend owes you; Negative = you owe friend.
+     * Used by settlement service to calculate cross-context settlements.
+     */
+    @GetMapping("/friend/{friendId}/balance")
+    public ResponseEntity<BigDecimal> getFriendNetBalance(
+            @PathVariable String friendId,
+            @RequestHeader("X-User-Id") String userId) {
+
+        log.info("Calculating net balance between {} and {}", userId, friendId);
+        BigDecimal netBalance = expenseService.calculateFriendNetBalance(userId, friendId);
+
+        return ResponseEntity.ok(netBalance);
+    }
+
     /**
      * Health check endpoint
      */

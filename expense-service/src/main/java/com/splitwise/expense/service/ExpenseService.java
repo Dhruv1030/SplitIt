@@ -10,6 +10,7 @@ import com.splitwise.expense.exception.ResourceNotFoundException;
 import com.splitwise.expense.exception.UnauthorizedException;
 import com.splitwise.expense.model.Expense;
 import com.splitwise.expense.model.ExpenseSplit;
+import com.splitwise.expense.model.ExpenseType;
 import com.splitwise.expense.repository.ExpenseRepository;
 import com.splitwise.expense.repository.ExpenseSplitRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +37,24 @@ public class ExpenseService {
     private final ExpenseEventProducer expenseEventProducer;
 
     /**
-     * Create a new expense with calculated splits
+     * Create a new expense with calculated splits.
+     * Supports both GROUP expenses (require groupId) and FRIEND expenses (require friendUserId).
      */
     public ExpenseResponse createExpense(CreateExpenseRequest request, String currentUserId) {
-        log.info("Creating expense for group: {}, paid by: {}, recorded by: {}", request.getGroupId(),
-                request.getPaidBy(), currentUserId);
+        // Determine expense type
+        boolean isFriendExpense = request.getFriendUserId() != null && !request.getFriendUserId().isBlank();
+        ExpenseType expenseType = isFriendExpense ? ExpenseType.FRIEND : ExpenseType.GROUP;
+
+        // Validate: group expenses need groupId, friend expenses need friendUserId
+        if (expenseType == ExpenseType.GROUP && request.getGroupId() == null) {
+            throw new BadRequestException("Group ID is required for group expenses");
+        }
+        if (expenseType == ExpenseType.FRIEND && (request.getFriendUserId() == null || request.getFriendUserId().isBlank())) {
+            throw new BadRequestException("Friend user ID is required for friend expenses");
+        }
+
+        log.info("Creating {} expense, paid by: {}, recorded by: {}",
+                expenseType, request.getPaidBy(), currentUserId);
 
         // Calculate splits using the split calculator
         List<ExpenseSplit> splits = splitCalculatorService.calculateSplits(request);
@@ -51,6 +65,8 @@ public class ExpenseService {
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() : "USD")
                 .groupId(request.getGroupId())
+                .friendUserId(isFriendExpense ? request.getFriendUserId() : null)
+                .expenseType(expenseType)
                 .paidBy(request.getPaidBy())
                 .createdBy(currentUserId)
                 .category(request.getCategory())
@@ -281,6 +297,52 @@ public class ExpenseService {
     }
 
     /**
+     * Get all direct friend expenses between two users
+     */
+    @Transactional(readOnly = true)
+    public List<ExpenseResponse> getFriendExpenses(String userId, String friendId) {
+        List<Expense> expenses = expenseRepository.findFriendExpenses(userId, friendId);
+        return expenses.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Calculate the net balance between two users across ALL shared expenses (group + friend).
+     * Positive = friendId owes userId; Negative = userId owes friendId.
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal calculateFriendNetBalance(String userId, String friendId) {
+        log.info("Calculating net balance between {} and {}", userId, friendId);
+
+        List<Expense> sharedExpenses = expenseRepository.findAllExpensesBetweenUsers(userId, friendId);
+        BigDecimal netBalance = BigDecimal.ZERO;
+
+        for (Expense expense : sharedExpenses) {
+            String paidBy = expense.getPaidBy();
+
+            if (paidBy.equals(userId)) {
+                // userId paid: friendId's split is what friendId owes userId
+                for (ExpenseSplit split : expense.getSplits()) {
+                    if (split.getUserId().equals(friendId)) {
+                        netBalance = netBalance.add(split.getAmount());
+                    }
+                }
+            } else if (paidBy.equals(friendId)) {
+                // friendId paid: userId's split is what userId owes friendId
+                for (ExpenseSplit split : expense.getSplits()) {
+                    if (split.getUserId().equals(userId)) {
+                        netBalance = netBalance.subtract(split.getAmount());
+                    }
+                }
+            }
+        }
+
+        log.info("Net balance between {} and {}: {}", userId, friendId, netBalance);
+        return netBalance;
+    }
+
+    /**
      * Calculate net balances for all users in a group
      * Returns Map<userId, netBalance>
      * Positive balance = others owe this user
@@ -333,6 +395,8 @@ public class ExpenseService {
                 .amount(expense.getAmount())
                 .currency(expense.getCurrency())
                 .groupId(expense.getGroupId())
+                .friendUserId(expense.getFriendUserId())
+                .expenseType(expense.getExpenseType())
                 .paidBy(expense.getPaidBy())
                 .createdBy(expense.getCreatedBy())
                 .category(expense.getCategory())
