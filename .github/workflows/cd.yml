@@ -111,7 +111,7 @@ jobs:
               --name discovery-server \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.ACR_LOGIN_SERVER }}/discovery-server:${{ github.sha }} \
-              --min-replicas 1 --max-replicas 1
+              --min-replicas 0 --max-replicas 1
             echo "Waiting 30s for discovery-server to stabilize..."
             sleep 30
 
@@ -126,7 +126,7 @@ jobs:
               --name api-gateway \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ github.sha }} \
-              --min-replicas 1 --max-replicas 1 \
+              --min-replicas 0 --max-replicas 1 \
               --set-env-vars \
                 "SERVICES_USER_URL=https://user-service.${{ env.BASE_DOMAIN }}" \
                 "SERVICES_GROUP_URL=https://group-service.${{ env.BASE_DOMAIN }}" \
